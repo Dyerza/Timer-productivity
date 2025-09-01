@@ -1,0 +1,3415 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FocusFlow - Timer Produktivitas</title>
+    <!-- Favicon dinamis yang menunjukkan emoji jam -->
+    <link rel="icon" id="favicon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⏱️</text></svg>">
+    
+    <!-- Preconnect untuk optimasi pemuatan font dari Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- [PENGEMBANGAN] Variabel CSS yang Ditingkatkan --- */
+        :root {
+            /* Palet Warna Utama (Mode Gelap) */
+            --bg-color: #0f0f14;
+            --text-color: #e0e0e0;
+            --text-color-muted: #8a8a8e;
+            --timer-text-color: #ffffff;
+            --card-bg-color: rgba(28, 28, 32, 0.6);
+            --card-border-color: rgba(255, 255, 255, 0.1);
+            --modal-bg-color: #1e1e24;
+            --modal-border-color: rgba(255, 255, 255, 0.15);
+            --input-bg-color: rgba(0, 0, 0, 0.2);
+            --accent-color: #ffffff;
+            --shadow-color: rgba(0, 0, 0, 0.3);
+            --success-color: #2ecc71;
+            --danger-color: #e74c3c;
+            --priority-color: #f1c40f;
+            
+            /* Warna untuk efek Aurora Borealis */
+            --aurora-1: #3a0ca3;
+            --aurora-2: #4361ee;
+            --aurora-3: #f72585;
+
+            /* Warna untuk Riwayat & Grafik */
+            --focus-color: #4361ee;
+            --break-color: #2ecc71;
+            --graph-l0: rgba(255, 255, 255, 0.05);
+            --graph-l1: color-mix(in srgb, var(--accent-color) 25%, transparent);
+            --graph-l2: color-mix(in srgb, var(--accent-color) 50%, transparent);
+            --graph-l3: color-mix(in srgb, var(--accent-color) 75%, transparent);
+            --graph-l4: var(--accent-color);
+
+            /* Transisi global untuk perubahan tema yang mulus */
+            --theme-transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        /* [PENGEMBANGAN] Palet Warna untuk Mode Terang */
+        html.light-mode {
+            --bg-color: #f0f2f5;
+            --text-color: #1a1a1a;
+            --text-color-muted: #65676b;
+            --timer-text-color: #1a1a1a;
+            --card-bg-color: rgba(255, 255, 255, 0.6);
+            --card-border-color: rgba(0, 0, 0, 0.1);
+            --modal-bg-color: #ffffff;
+            --modal-border-color: #e0e0e0;
+            --input-bg-color: #f0f2f5;
+            --accent-color: #3498db;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            
+            --aurora-1: #8ecae6;
+            --aurora-2: #219ebc;
+            --aurora-3: #ffb703;
+
+            --focus-color: #219ebc;
+            --break-color: #57cc99;
+            
+            --graph-l0: rgba(0, 0, 0, 0.05);
+        }
+        
+        /* [PENGEMBANGAN] Tema Warna Khusus untuk Mode Istirahat */
+        html.break-theme {
+            --aurora-1: #00b4d8;
+            --aurora-2: #48cae4;
+            --aurora-3: #ade8f4;
+        }
+        
+        html.light-mode.break-theme {
+             --aurora-1: #80ed99;
+             --aurora-2: #57cc99;
+             --aurora-3: #c7f9cc;
+        }
+
+        /* --- Reset & Gaya Global --- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            transition: var(--theme-transition);
+            padding: 1rem;
+            position: relative;
+        }
+        
+        /* --- [PENGEMBANGAN] Efek Latar Belakang Aurora & Cahaya Mouse --- */
+        .aurora-container {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .aurora {
+            position: absolute;
+            border-radius: 50%;
+            mix-blend-mode: overlay;
+            opacity: 0.3;
+            animation: moveAurora 20s infinite alternate;
+            will-change: transform;
+            transition: background 1.5s ease-in-out;
+        }
+
+        .aurora.one {
+            width: 150vmax; height: 150vmax;
+            top: 50%; left: 50%;
+            background: radial-gradient(circle, var(--aurora-1) 0%, transparent 40%);
+            animation-duration: 20s;
+        }
+        .aurora.two {
+            width: 120vmax; height: 120vmax;
+            top: 20%; left: 20%;
+            background: radial-gradient(circle, var(--aurora-2) 0%, transparent 40%);
+            animation-duration: 25s;
+        }
+         .aurora.three {
+            width: 100vmax; height: 100vmax;
+            top: 80%; left: 80%;
+            background: radial-gradient(circle, var(--aurora-3) 0%, transparent 40%);
+            animation-duration: 30s;
+        }
+        
+        #mouse-light {
+            position: fixed;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.04) 0%, transparent 60%);
+            border-radius: 50%;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            transition: transform 0.1s ease-out;
+            z-index: 0;
+            will-change: transform;
+        }
+        
+        @keyframes moveAurora {
+            from { transform: translate(-50%, -50%) rotate(0deg) translateX(20%); }
+            to { transform: translate(-50%, -50%) rotate(360deg) translateX(-20%); }
+        }
+
+        /* --- Layout Utama Aplikasi --- */
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            width: 100%;
+            max-width: 1280px;
+            z-index: 1;
+        }
+
+        /* [PENGEMBANGAN] Layout Grid yang Lebih Baik untuk Desktop */
+        @media (min-width: 992px) {
+            body {
+                align-items: center;
+                padding: 2rem;
+            }
+            .app-container {
+                display: grid;
+                grid-template-columns: 1fr 420px;
+                align-items: center;
+                gap: 4rem;
+                transition: align-items 0.5s ease;
+            }
+
+            /* [BARU] Sesuaikan posisi timer saat menu riwayat aktif */
+            .app-container.history-view-active {
+                align-items: flex-start;
+            }
+        }
+
+        /* --- [ANIMASI DISEMPURNAKAN] Animasi Saat Halaman Dimuat --- */
+        .timer-section, .sidebar {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.8s cubic-bezier(0.25, 0.8, 0.25, 1), transform 0.8s cubic-bezier(0.25, 0.8, 0.25, 1);
+            will-change: opacity, transform;
+        }
+
+        body.loaded .timer-section {
+            opacity: 1;
+            transform: translateY(0);
+            transition-delay: 0.2s;
+        }
+
+        body.loaded .sidebar {
+            opacity: 1;
+            transform: translateY(0);
+            transition-delay: 0.4s;
+        }
+        
+        @keyframes slide-up-fade-in {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* --- Bagian Timer --- */
+        .timer-section {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding-top: 5rem;
+            position: relative;
+        }
+
+        .timer-progress-wrapper {
+            position: relative;
+            width: 280px;
+            height: 280px;
+            margin-bottom: 1.5rem;
+            border-radius: 50%;
+            background: transparent;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            animation: breathing 4s ease-in-out infinite;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+        
+        @keyframes breathing {
+            0%, 100% { transform: scale(0.98); }
+            50% { transform: scale(1); }
+        }
+
+        .timer-progress-ring {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            transform: rotate(-90deg);
+            filter: drop-shadow(0 0 10px var(--accent-color));
+            transition: filter 0.5s ease;
+        }
+
+        .timer-progress-ring__circle {
+            transition: stroke-dashoffset 1s linear, stroke 0.5s ease;
+            stroke: var(--accent-color);
+            stroke-width: 6; 
+            fill: transparent;
+            stroke-linecap: round;
+        }
+
+        .timer-progress-ring__background {
+            stroke: rgba(255,255,255,0.1);
+            stroke-width: 2;
+            fill: transparent;
+        }
+        
+        #time-display {
+            font-size: clamp(4.5rem, 12vw, 6rem);
+            font-weight: 900;
+            letter-spacing: -2px;
+            position: relative;
+            display: flex;
+            color: var(--timer-text-color);
+            text-shadow: 2px 2px 4px var(--shadow-dark);
+            transition: color 0.5s ease;
+        }
+        
+        /* [PENGEMBANGAN] Animasi Digit yang Lebih Halus */
+        .digit {
+            display: inline-block;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease-in-out;
+        }
+        .digit.changing {
+            transform: translateY(-15px);
+            opacity: 0;
+        }
+
+        #mode-display {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            opacity: 0.8;
+            transition: color 0.5s ease;
+            animation: slide-up-fade-in 0.6s 0.6s both;
+        }
+
+        .controls {
+            display: flex;
+            gap: 1.5rem;
+            margin-top: 1rem;
+            animation: slide-up-fade-in 0.6s 0.8s both;
+        }
+
+        .control-btn {
+            background-color: var(--card-bg-color);
+            color: var(--text-color);
+            border: 1px solid var(--card-border-color);
+            border-radius: 50%;
+            width: 70px;
+            height: 70px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 8px 20px var(--shadow-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(12px);
+            will-change: transform, box-shadow;
+        }
+                
+        .control-btn:active {
+             transform: translateY(1px) scale(0.98);
+             box-shadow: 0 4px 10px var(--shadow-color);
+        }
+        
+        .control-btn svg {
+            width: 24px;
+            height: 24px;
+            fill: currentColor;
+            transition: transform 0.3s ease;
+        }
+
+        #start-pause-btn {
+            color: var(--accent-color);
+        }
+
+        #quote-display {
+            margin-top: 2rem;
+            font-style: italic;
+            opacity: 0;
+            max-width: 90%;
+            min-height: 40px;
+            transition: opacity 0.5s ease, transform 0.5s ease;
+            transform: translateY(10px);
+            color: var(--text-color-muted);
+        }
+        #quote-display.visible {
+            opacity: 0.8;
+            transform: translateY(0);
+        }
+
+        /* --- [OPTIMISASI] Sidebar tanpa efek 3D untuk performa lebih baik --- */
+        .sidebar {
+            background-color: var(--card-bg-color);
+            border: 1px solid var(--card-border-color);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-radius: 2rem;
+            padding: 1.5rem;
+            box-shadow: 0 8px 30px var(--shadow-color);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            height: fit-content;
+            width: 100%;
+            transition: var(--theme-transition), transform 0.3s ease;
+        }
+
+        .sidebar-tabs {
+            display: flex;
+            gap: 0.5rem;
+            position: relative;
+            flex-wrap: wrap;
+            /* [PERBAIKAN] Menambahkan ruang agar indikator tidak tumpang tindih dengan konten di bawahnya */
+            padding-bottom: 5px; 
+            border-bottom: 1px solid var(--card-border-color);
+        }
+
+        /* [PERBAIKAN] Penyesuaian tata letak tab untuk mobile */
+        @media (max-width: 420px) {
+            .sidebar-tabs {
+                justify-content: center; /* Pusatkan tombol tab jika terbungkus */
+            }
+            .tab-btn {
+                padding: 0.7rem 0.5rem; /* Kurangi padding agar lebih pas */
+            }
+        }
+
+        .tab-btn {
+            padding: 0.7rem 1rem;
+            border: none;
+            background: none;
+            color: var(--text-color);
+            opacity: 0.6;
+            cursor: pointer;
+            font-weight: 700;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .tab-btn svg {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+            transition: fill 0.3s ease;
+        }
+
+        .tab-btn.active {
+            opacity: 1;
+            color: var(--accent-color);
+        }
+
+        /* --- [PERBAIKAN ANIMASI] Indikator Slider yang Responsif Terhadap Wrapping --- */
+        .tab-indicator {
+            position: absolute;
+            top: 0; /* [PERBAIKAN] Posisi Y diatur oleh JS */
+            left: 0; /* [PERBAIKAN] Posisi X diatur oleh JS */
+            height: 3px;
+            background-color: var(--accent-color);
+            border-radius: 3px;
+            transition: transform 0.4s cubic-bezier(0.65, 0, 0.35, 1), width 0.4s cubic-bezier(0.65, 0, 0.35, 1), background-color 0.5s ease;
+            z-index: 1;
+            will-change: transform, width;
+        }
+        
+        /* [DIHAPUS] Elemen ::after tidak lagi diperlukan karena digantikan dengan border-bottom pada .sidebar-tabs */
+
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Konten Statistik */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .stat-item {
+            background-color: rgba(0,0,0,0.1);
+            padding: 1rem;
+            border-radius: 1rem;
+            text-align: center;
+            transition: transform 0.2s ease, background-color 0.2s ease;
+        }
+        .stat-item h4 {
+            font-size: 1rem;
+            opacity: 0.7;
+            margin-bottom: 0.5rem;
+        }
+        .stat-item p {
+            font-size: 1.75rem;
+            font-weight: 700;
+        }
+        #stats-chart {
+            width: 100%;
+            max-height: 150px;
+        }
+        .daily-goal-tracker {
+            margin-top: 1rem;
+        }
+        .daily-goal-tracker h4 {
+            font-size: 1rem;
+            opacity: 0.7;
+            margin-bottom: 0.7rem;
+            text-align: center;
+        }
+        #goal-dots {
+            display: flex;
+            gap: 0.75rem; /* Sedikit lebih banyak ruang */
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        /* [PERBAIKAN] Membuat titik sasaran lebih jelas */
+        .goal-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background-color: transparent;
+            border: 2px solid var(--card-border-color);
+            transition: all 0.3s ease;
+        }
+        .goal-dot.completed {
+            background-color: var(--accent-color);
+            border-color: var(--accent-color);
+            box-shadow: 0 0 8px var(--accent-color);
+        }
+
+        /* --- [DISEMPURNAKAN] Sistem & Algoritma Daftar Tugas --- */
+        .tasks-header {
+             display: flex;
+             justify-content: space-between;
+             align-items: center;
+             margin-bottom: 0.5rem;
+        }
+        .tasks-header h3 {
+            font-size: 1.25rem;
+        }
+        #manage-projects-btn {
+            background: none; border: none;
+            color: var(--text-color-muted);
+            cursor: pointer; padding: 0.5rem;
+            border-radius: 0.5rem;
+            transition: color 0.2s ease, background-color 0.2s ease;
+            font-weight: 500;
+        }
+        #manage-projects-btn:hover {
+            color: var(--text-color);
+            background-color: rgba(255,255,255,0.05);
+        }
+        
+        /* [PERBAIKAN] Penyesuaian tata letak form tugas */
+        #todo-form {
+            display: flex;
+            flex-wrap: wrap; /* Tetap wrap untuk layar kecil */
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            align-items: center; /* Memastikan semua item terpusat secara vertikal */
+        }
+        
+        /* [BARU] Mencegah form tugas wrapping di desktop untuk tata letak yang lebih rapi */
+        @media (min-width: 768px) { /* Mulai dari tablet ke atas */
+            #todo-form {
+                flex-wrap: nowrap;
+            }
+        }
+        
+        #todo-input {
+            flex: 1 1 150px; /* Biarkan input text mengambil ruang sisa */
+            padding: 0.7rem 1rem;
+            border-radius: 0.7rem;
+            border: 1px solid var(--card-border-color);
+            background-color: transparent;
+            color: var(--text-color);
+            font-size: 1rem;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            height: 44px; /* [PERBAIKAN DARI SUHU WEB] Samakan tinggi dengan tombol */
+        }
+        #todo-project-select {
+            flex: 0 1 auto; /* Jangan biarkan pilihan proyek membesar */
+            padding: 0.7rem 1rem;
+            border-radius: 0.7rem;
+            border: 1px solid var(--card-border-color);
+            background-color: transparent;
+            color: var(--text-color);
+            font-size: 1rem;
+            -webkit-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%238a8a8e' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.7rem center;
+            height: 44px; /* [PERBAIKAN DARI SUHU WEB] Samakan tinggi dengan tombol */
+        }
+        #todo-project-select option {
+            background-color: var(--modal-bg-color);
+            color: var(--text-color);
+        }
+        #todo-input:focus, #todo-project-select:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-color) 20%, transparent);
+        }
+        #add-todo-btn {
+            padding: 0;
+            width: 44px; /* Lebar tetap */
+            height: 44px; /* Tinggi tetap agar sama dengan input */
+            font-size: 1.5rem; /* Ukuran ikon '+' lebih besar */
+            flex-shrink: 0; /* Mencegah tombol menyusut */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.7rem;
+            border: 1px solid var(--card-border-color);
+            background-color: rgba(255,255,255,0.1);
+            color: var(--accent-color);
+            font-weight: 700;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        /* [BARU] Gaya untuk Filter Tugas */
+        .todo-filters {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .filter-btn {
+            background: none;
+            border: 1px solid var(--card-border-color);
+            color: var(--text-color-muted);
+            padding: 0.4rem 0.8rem;
+            border-radius: 0.7rem;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .filter-btn.active {
+            color: var(--bg-color);
+            background-color: var(--accent-color);
+            border-color: var(--accent-color);
+        }
+
+        #todo-list {
+            list-style: none;
+            max-height: 220px;
+            overflow-y: auto;
+            padding-right: 0.5rem;
+        }
+        .todo-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.7rem;
+            padding: 0.8rem 0.2rem;
+            border-bottom: 1px solid var(--card-border-color);
+            animation: slideIn 0.4s ease-out;
+            transition: opacity 0.4s ease, max-height 0.4s ease, transform 0.4s ease;
+            position: relative;
+        }
+        .todo-item.priority-penting {
+            border-left: 3px solid var(--priority-color);
+            padding-left: 0.5rem;
+        }
+        /* [DISEMPURNAKAN] Animasi untuk Hapus & Selesai */
+        .todo-item.removing {
+            animation: slideOut 0.4s ease-in forwards;
+        }
+        .todo-item.completing {
+            transform: scale(0.95);
+            opacity: 0.5;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes slideOut {
+            from { opacity: 1; transform: translateX(0); max-height: 60px; }
+            to { opacity: 0; transform: translateX(20px); max-height: 0; padding-top: 0; padding-bottom: 0; border: none;}
+        }
+
+        .todo-checkbox-wrapper {
+             padding-top: 2px;
+        }
+        .todo-item input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            accent-color: var(--accent-color);
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        .todo-item input[type="checkbox"]:active {
+            transform: scale(1.2);
+        }
+        .todo-content {
+            flex-grow: 1;
+        }
+        .todo-item label {
+            cursor: pointer;
+            transition: opacity 0.3s ease;
+            display: block;
+            margin-bottom: 0.3rem;
+            line-height: 1.4;
+        }
+        .todo-item.completed label {
+            text-decoration: line-through;
+            opacity: 0.5;
+        }
+        .todo-project-tag {
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 0.15rem 0.5rem;
+            border-radius: 0.5rem;
+            background-color: var(--card-border-color);
+            opacity: 0.8;
+            display: inline-block;
+        }
+        /* [BARU] Tombol Aksi Tugas (Prioritas, Edit, Hapus) */
+        .todo-actions {
+            display: flex;
+            align-items: center;
+        }
+        .todo-action-btn {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            opacity: 0.5;
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 0.3rem;
+            transition: color 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+        }
+        .priority-btn.penting {
+            color: var(--priority-color);
+            opacity: 1;
+        }
+        
+        /* [BARU] UI untuk mengedit tugas */
+        .edit-todo-input {
+            width: 100%;
+            background-color: var(--input-bg-color);
+            border: 1px solid var(--accent-color);
+            color: var(--text-color);
+            border-radius: 0.5rem;
+            padding: 0.2rem 0.5rem;
+            font-family: inherit;
+            font-size: inherit;
+        }
+        .edit-todo-input:focus {
+            outline: none;
+        }
+        .todo-item.editing label {
+            display: none;
+        }
+        
+        /* [BARU] Pemisah antara tugas aktif dan selesai */
+        .completed-separator {
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--text-color-muted);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 1rem 0 0.5rem 0;
+            border-bottom: 1px solid var(--card-border-color);
+            margin-bottom: 0.5rem;
+        }
+        
+        /* [PENGEMBANGAN] Scrollbar yang Lebih Stylish */
+        #history-timeline-container, #todo-list, .contribution-graph-container, #project-list {
+            scrollbar-width: thin;
+            scrollbar-color: var(--accent-color) transparent;
+        }
+        #history-timeline-container::-webkit-scrollbar, #todo-list::-webkit-scrollbar, .contribution-graph-container::-webkit-scrollbar, #project-list::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        #history-timeline-container::-webkit-scrollbar-track, #todo-list::-webkit-scrollbar-track, .contribution-graph-container::-webkit-scrollbar-track, #project-list::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        #history-timeline-container::-webkit-scrollbar-thumb, #todo-list::-webkit-scrollbar-thumb, .contribution-graph-container::-webkit-scrollbar-thumb, #project-list::-webkit-scrollbar-thumb {
+            background-color: var(--accent-color);
+            border-radius: 10px;
+            border: 3px solid transparent;
+        }
+
+        /* --- Tampilan Riwayat --- */
+        
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        .history-header h3 {
+            font-size: 1.25rem;
+        }
+        .history-header #export-history-btn {
+            background: none;
+            border: 1px solid transparent;
+            color: var(--text-color-muted);
+            cursor: pointer;
+            padding: 0.5rem 0.7rem;
+            border-radius: 0.7rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .history-header #export-history-btn svg {
+            width: 16px; height: 16px;
+        }
+
+        .history-analysis-section {
+            background-color: rgba(0,0,0,0.15);
+            border: 1px solid var(--card-border-color);
+            border-radius: 1.5rem;
+            padding: 1.2rem;
+            margin-bottom: 1.5rem;
+        }
+        .history-analysis-section h3 {
+            text-align: center;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+            color: var(--text-color-muted);
+        }
+        .period-toggle-group {
+            display: flex;
+            background-color: rgba(0,0,0,0.2);
+            border-radius: 0.7rem;
+            padding: 0.25rem;
+            margin-bottom: 1rem;
+        }
+        .period-toggle-btn {
+            flex: 1;
+            padding: 0.5rem;
+            border: none;
+            background: none;
+            color: var(--text-color-muted);
+            font-weight: 700;
+            cursor: pointer;
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+        }
+        .period-toggle-btn.active {
+            background-color: var(--card-bg-color);
+            color: var(--accent-color);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        /* [BARU] Filter Proyek di Analisis */
+        #history-project-filter {
+            width: 100%;
+            padding: 0.7rem 1rem;
+            border-radius: 0.7rem;
+            border: 1px solid var(--card-border-color);
+            background-color: rgba(0,0,0,0.2);
+            color: var(--text-color);
+            font-size: 0.9rem;
+            -webkit-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%238a8a8e' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.7rem center;
+            margin-bottom: 1rem;
+        }
+         #history-project-filter option {
+             background-color: var(--modal-bg-color);
+             color: var(--text-color);
+         }
+
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .analysis-card {
+            background-color: rgba(0,0,0,0.2);
+            border-radius: 1rem;
+            padding: 1rem;
+            text-align: center;
+        }
+        .analysis-card .label {
+            font-size: 0.8rem;
+            color: var(--text-color-muted);
+            margin-bottom: 0.5rem;
+        }
+        .analysis-card .value {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        #productivity-chart-container {
+            width: 100%;
+            height: 150px;
+        }
+
+
+        .history-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .history-filter-group {
+            display: flex;
+            background-color: rgba(0,0,0,0.1);
+            border-radius: 0.7rem;
+            padding: 0.25rem;
+        }
+        .history-filter-btn {
+            flex: 1;
+            padding: 0.5rem;
+            border: none;
+            background: none;
+            color: var(--text-color-muted);
+            font-weight: 700;
+            cursor: pointer;
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+        }
+        .history-filter-btn.active {
+            background-color: var(--card-bg-color);
+            color: var(--accent-color);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        #history-search {
+            width: 100%;
+            padding: 0.6rem 1rem;
+            border-radius: 0.7rem;
+            border: 1px solid var(--card-border-color);
+            background-color: transparent;
+            color: var(--text-color);
+            font-size: 0.9rem;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        #history-search:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-color) 20%, transparent);
+        }
+        
+        .contribution-graph-container {
+            position: relative;
+            overflow-x: auto;
+            padding-bottom: 1rem;
+        }
+        #contribution-graph {
+            display: grid;
+            grid-auto-flow: column;
+            grid-template-rows: repeat(7, 1fr);
+            gap: 3px;
+        }
+        .graph-cell {
+            width: 12px;
+            height: 12px;
+            background-color: var(--graph-l0);
+            border-radius: 2px;
+            transition: transform 0.2s ease;
+        }
+        .graph-cell[data-level="1"] { background-color: var(--graph-l1); }
+        .graph-cell[data-level="2"] { background-color: var(--graph-l2); }
+        .graph-cell[data-level="3"] { background-color: var(--graph-l3); }
+        .graph-cell[data-level="4"] { background-color: var(--graph-l4); }
+
+        body::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            top: var(--tooltip-top);
+            left: var(--tooltip-left);
+            transform: translateX(-50%);
+            display: none;
+            padding: 0.4rem 0.8rem;
+            background-color: #111;
+            color: #fff;
+            border-radius: 0.5rem;
+            font-size: 0.8rem;
+            font-weight: 500;
+            z-index: 1001;
+            white-space: nowrap;
+            pointer-events: none;
+            animation: fadeIn 0.2s ease;
+        }
+        body.tooltip-active::after {
+            display: block;
+        }
+
+        #history-timeline-container {
+            list-style: none;
+            max-height: 280px;
+            overflow-y: auto;
+            padding-right: 0.5rem;
+        }
+
+        .timeline-date-separator {
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-color-muted);
+            text-align: center;
+            padding: 1.5rem 0 1rem 0;
+            position: relative;
+        }
+        .timeline-date-separator::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            width: 100%;
+            height: 1px;
+            background: var(--card-border-color);
+            z-index: -1;
+        }
+        .timeline-date-separator span {
+            background-color: var(--card-bg-color);
+            padding: 0 1rem;
+        }
+        .timeline-item {
+            position: relative;
+            display: flex;
+            gap: 1rem;
+            padding: 1rem 0;
+            align-items: flex-start;
+            border-left: 2px solid var(--card-border-color);
+            padding-left: 1.5rem;
+            margin-left: 14px;
+        }
+         .timeline-item:last-child {
+             border-left: 2px solid transparent;
+         }
+
+        .timeline-icon {
+            position: absolute;
+            left: -15px;
+            top: 1rem;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid var(--card-border-color);
+            background-color: var(--card-bg-color);
+            z-index: 1;
+        }
+        .timeline-icon.focus { background-color: var(--focus-color); color: white; }
+        .timeline-icon.break { background-color: var(--break-color); color: white; }
+        
+        .timeline-icon svg {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+        }
+        .timeline-content {
+            background-color: rgba(0,0,0,0.1);
+            border-radius: 1rem;
+            padding: 1rem;
+            width: 100%;
+            transition: transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+            position: relative;
+            will-change: transform;
+        }
+        .timeline-content p {
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            line-height: 1.4;
+            padding-right: 50px;
+        }
+        .timeline-meta {
+            font-size: 0.8rem;
+            color: var(--text-color-muted);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        .timeline-task, .timeline-project {
+            background-color: var(--card-border-color);
+            padding: 0.2rem 0.5rem;
+            border-radius: 0.4rem;
+        }
+        
+        .timeline-item-actions {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            display: flex;
+            gap: 0.2rem;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        .timeline-action-btn {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            color: var(--text-color);
+            cursor: pointer;
+            display: grid;
+            place-items: center;
+            transition: background-color 0.2s ease;
+        }
+        .timeline-action-btn svg {
+            width: 14px; height: 14px;
+        }
+        
+        .empty-history-message {
+            text-align: center;
+            padding: 2rem 1rem;
+            color: var(--text-color-muted);
+            display: none;
+        }
+        .empty-history-message svg {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        /* --- Pengaturan & Modal --- */
+        .top-buttons {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            display: flex;
+            gap: 0.5rem;
+            z-index: 100;
+        }
+
+        .settings-btn, .fullscreen-btn {
+            position: static;
+            background-color: var(--card-bg-color);
+            border: 1px solid var(--card-border-color);
+            color: var(--text-color);
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 15px var(--shadow-color);
+            transition: all 0.2s ease;
+            backdrop-filter: blur(12px);
+        }
+        
+        .modal {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            padding: 1rem;
+        }
+
+        .modal.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            background-color: var(--modal-bg-color);
+            border: 1px solid var(--modal-border-color);
+            padding: 2rem;
+            border-radius: 1.5rem;
+            width: 100%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            /* [ANIMASI DISEMPURNAKAN] Transisi modal yang lebih 'bouncy' dan memuaskan */
+            transform: scale(0.95);
+            opacity: 0;
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease, background-color 0.5s ease;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            will-change: transform, opacity;
+        }
+        
+        .modal.visible .modal-content {
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--modal-border-color);
+            padding-bottom: 1rem;
+        }
+
+        .modal-header h2 {
+            font-size: 1.5rem;
+        }
+
+        .close-modal-btn {
+            background: none;
+            border: none;
+            font-size: 2rem;
+            color: var(--text-color);
+            cursor: pointer;
+            opacity: 0.7;
+            transition: transform 0.2s ease, opacity 0.2s ease;
+        }
+        .close-modal-btn:hover {
+            opacity: 1;
+            transform: rotate(90deg);
+        }
+
+        .setting-group {
+            margin-bottom: 1.5rem;
+        }
+        .setting-group h3 {
+            margin-bottom: 1rem;
+            opacity: 0.8;
+            border-bottom: 1px solid var(--card-border-color);
+            padding-bottom: 0.5rem;
+        }
+        .setting-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        .setting-group input[type="number"], .setting-group select {
+            width: 100%;
+            padding: 0.8rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--modal-border-color);
+            background-color: var(--input-bg-color);
+            color: var(--text-color);
+            font-size: 1rem;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .setting-group input[type="number"]:focus, .setting-group select:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-color) 30%, transparent);
+        }
+        
+        /* [PERBAIKAN] Membuat input timer sejajar dan responsif */
+        .time-inputs {
+            display: grid;
+            grid-template-columns: 1fr; /* Default 1 kolom untuk mobile */
+            gap: 1rem;
+        }
+        /* Gunakan 3 kolom untuk layar yang lebih lebar */
+        @media (min-width: 480px) {
+            .time-inputs {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        .time-inputs > div { flex: 1; min-width: 80px; }
+        
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0;
+        }
+        
+        .setting-item label {
+            margin-bottom: 0;
+            font-weight: 500;
+        }
+
+        .color-picker-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        input[type="color"] {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            width: 44px;
+            height: 44px;
+            background-color: transparent;
+            border: none;
+            cursor: pointer;
+        }
+        input[type="color"]::-webkit-color-swatch {
+            border-radius: 50%;
+            border: 2px solid var(--modal-border-color);
+            transition: transform 0.2s ease;
+        }
+        input[type="color"]::-moz-color-swatch {
+            border-radius: 50%;
+            border: 2px solid var(--modal-border-color);
+        }
+        
+        /* --- Tombol Mode Terang/Gelap --- */
+        #theme-toggle {
+            display: none;
+        }
+
+        .theme-toggle-label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            width: 80px;
+            height: 40px;
+            background: #2c3e50;
+            border-radius: 100px;
+            position: relative;
+            transition: all .5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.4), 0 2px 5px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .toggle-handle {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            transition: all .5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            z-index: 2;
+        }
+        
+        .stars {
+            position: absolute;
+            width: 100%; height: 100%;
+            top: 0; left: 0;
+            transition: opacity 0.5s ease;
+            opacity: 1;
+        }
+        .star {
+            position: absolute;
+            background-color: white;
+            border-radius: 50%;
+            animation: twinkle 2s infinite ease-in-out;
+        }
+        .star:nth-child(1) { width: 1px; height: 1px; top: 20%; left: 30%; animation-delay: 0.2s; }
+        .star:nth-child(2) { width: 2px; height: 2px; top: 40%; left: 70%; animation-delay: 0.5s; }
+        .star:nth-child(3) { width: 1px; height: 1px; top: 75%; left: 50%; animation-delay: 1s; }
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        .toggle-handle {
+            background: #bdc3c7;
+            box-shadow: inset -3px -2px 5px -2px #888, inset -10px -4px 0 0 #7f8c8d;
+        }
+        
+        #theme-toggle:checked + .theme-toggle-label .toggle-handle {
+            transform: translateX(40px);
+            background: #f1c40f;
+            box-shadow: 0 0 15px 2px #f39c12;
+        }
+        
+        #theme-toggle:checked + .theme-toggle-label {
+             background: #87CEEB;
+        }
+        
+        #theme-toggle:checked + .theme-toggle-label .stars {
+            opacity: 0;
+        }
+
+        .ambient-sound-options {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .ambient-sound-btn {
+            padding: 0.7rem 1.2rem;
+            border-radius: 0.7rem;
+            border: 2px solid var(--modal-border-color);
+            background-color: transparent;
+            color: var(--text-color);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+        }
+        .ambient-sound-btn.active {
+            background-color: var(--accent-color);
+            color: var(--bg-color);
+            border-color: var(--accent-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px color-mix(in srgb, var(--accent-color) 40%, transparent);
+        }
+
+        .checkbox-group {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+        .checkbox-group span {
+            font-weight: 500;
+            opacity: 0.9;
+        }
+        .checkbox-group input[type="checkbox"] {
+            height: 0; width: 0; visibility: hidden;
+        }
+        .checkbox-group .toggle-label {
+            cursor: pointer;
+            text-indent: -9999px;
+            width: 50px; height: 30px;
+            background: #39393D;
+            display: block;
+            border-radius: 100px;
+            position: relative;
+            transition: background-color 0.3s ease;
+        }
+        html.light-mode .checkbox-group .toggle-label {
+            background: #E9E9EA;
+        }
+        .checkbox-group .toggle-label:after {
+            content: '';
+            position: absolute;
+            top: 2px; left: 2px;
+            width: 26px; height: 26px;
+            background: #fff;
+            border-radius: 90px;
+            transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        .checkbox-group input:checked + .toggle-label {
+            background: #34C759;
+        }
+        .checkbox-group input:checked + .toggle-label:after {
+            left: calc(100% - 2px);
+            transform: translateX(-100%);
+        }
+        .checkbox-group .toggle-label:active:after {
+            width: 32px;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-3px); }
+            75% { transform: translateX(3px); }
+        }
+
+        .danger-btn {
+            background-color: var(--danger-color);
+            color: white;
+            border: none;
+            width: 100%;
+            padding: 0.8rem;
+            border-radius: 0.7rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        /* --- [PENGEMBANGAN] Mode Fokus Layar Penuh yang Lebih Imersif --- */
+        #fullscreen-container {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 2rem;
+            z-index: 1000;
+            color: var(--text-color);
+            text-shadow: 0 2px 5px rgba(0,0,0,0.5);
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        #fullscreen-header, #fullscreen-footer {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #fullscreen-main {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        #fullscreen-task-display {
+            font-size: clamp(1rem, 4vw, 1.5rem);
+            font-weight: 500;
+            max-width: 90%;
+            text-align: center;
+            min-height: 1.5em;
+        }
+
+        #fullscreen-session-count {
+            font-size: clamp(0.9rem, 3vw, 1.1rem);
+            font-weight: 700;
+            margin-top: 1.5rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        #fullscreen-exit-hint {
+            font-size: 0.9rem;
+            opacity: 0;
+            animation: fadeInOut 5s ease-in-out infinite;
+        }
+
+        @keyframes fadeInOut {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 0.6; }
+        }
+
+        /* [OPTIMISASI ANIMASI] Mengganti 'filter' dengan 'box-shadow' yang lebih ringan */
+        @keyframes pulse-glow {
+            0% { box-shadow: 0 0 15px 5px color-mix(in srgb, var(--accent-color) 30%, transparent); }
+            50% { box-shadow: 0 0 25px 10px color-mix(in srgb, var(--accent-color) 40%, transparent); }
+            100% { box-shadow: 0 0 15px 5px color-mix(in srgb, var(--accent-color) 30%, transparent); }
+        }
+        
+        body.fullscreen-focus {
+            padding: 0;
+            background: #111;
+            overflow: hidden;
+        }
+
+        .fullscreen-focus .app-container {
+            display: none;
+        }
+
+        .fullscreen-focus #fullscreen-container {
+            display: flex;
+            opacity: 1;
+        }
+
+        /* [OPTIMISASI ANIMASI] Menerapkan animasi baru ke wrapper, bukan ke SVG ring */
+        .fullscreen-focus .timer-progress-wrapper {
+             animation: pulse-glow 3s ease-in-out infinite;
+        }
+
+        .fullscreen-focus .timer-progress-wrapper {
+            width: clamp(250px, 60vmin, 500px);
+            height: clamp(250px, 60vmin, 500px);
+        }
+
+        .fullscreen-focus #time-display {
+            font-size: clamp(4rem, 15vmin, 10rem);
+        }
+
+        #fullscreen-state-icon {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 5rem;
+            color: rgba(255, 255, 255, 0.8);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        #fullscreen-state-icon.active {
+            opacity: 1;
+        }
+        #fullscreen-state-icon svg {
+            width: clamp(50px, 10vmin, 80px);
+            height: clamp(50px, 10vmin, 80px);
+            fill: currentColor;
+            filter: drop-shadow(0 0 10px rgba(0,0,0,0.5));
+        }
+
+        #fullscreen-controls {
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        #fullscreen-main:hover #fullscreen-controls,
+        #fullscreen-main:focus-within #fullscreen-controls {
+             opacity: 1;
+        }
+
+        #fullscreen-skip-btn {
+            background: linear-gradient(45deg, rgba(255,255,255,0.1), rgba(255,255,255,0.2));
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 2rem;
+            cursor: pointer;
+            font-weight: 700;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        #fullscreen-clock {
+            font-size: 1.2rem;
+            font-weight: 700;
+            opacity: 0.8;
+        }
+
+
+        /* --- Modal Catatan, Tugas, dan Proyek --- */
+        #note-modal textarea, #focus-task-modal select {
+            width: 100%;
+            padding: 0.7rem;
+            border-radius: 0.7rem;
+            border: 1px solid var(--card-border-color);
+            background-color: transparent;
+            color: var(--text-color);
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+        #note-modal textarea:focus, #focus-task-modal select:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-color) 20%, transparent);
+        }
+        #note-modal textarea { min-height: 100px; }
+        
+        #save-note-btn, #start-focus-btn {
+            width: 100%;
+            padding: 0.8rem;
+            border-radius: 0.7rem;
+            border: none;
+            background-color: var(--accent-color);
+            color: var(--bg-color);
+            font-weight: 700;
+            cursor: pointer;
+            transition: filter 0.2s ease, transform 0.2s ease;
+        }
+        /* [BARU] Gaya untuk Modal Manajemen Proyek */
+        #project-form {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        #project-input {
+            flex-grow: 1;
+            padding: 0.7rem 1rem;
+            border-radius: 0.7rem;
+            border: 1px solid var(--modal-border-color);
+            background-color: var(--input-bg-color);
+            color: var(--text-color);
+        }
+        #add-project-btn {
+            padding: 0.7rem 1rem;
+            border-radius: 0.7rem;
+            border: none;
+            background-color: var(--accent-color);
+            color: var(--bg-color);
+            font-weight: 700;
+            cursor: pointer;
+        }
+        #project-list {
+            list-style: none;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .project-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.7rem 0.5rem;
+            border-bottom: 1px solid var(--modal-border-color);
+            animation: slideIn 0.3s ease;
+        }
+        .delete-project-btn {
+            background: none; border: none;
+            color: var(--text-color-muted);
+            cursor: pointer; font-size: 1.2rem;
+            transition: color 0.2s ease, transform 0.2s ease;
+        }
+
+        /* --- [OPTIMISASI RESPONSIVE] Efek hover hanya untuk perangkat dengan mouse --- */
+        @media (hover: hover) and (pointer: fine) {
+            .timer-progress-wrapper:hover {
+                transform: scale(1.02);
+            }
+            .control-btn:hover {
+                transform: translateY(-4px) scale(1.05);
+                box-shadow: 0 12px 25px var(--shadow-color);
+            }
+            .tab-btn:hover {
+                opacity: 1;
+            }
+            #add-todo-btn:hover {
+                background-color: rgba(255,255,255,0.2);
+            }
+            .todo-action-btn:hover {
+                opacity: 1;
+                transform: scale(1.1);
+            }
+            .todo-action-btn.delete:hover {
+                color: var(--danger-color);
+            }
+            .delete-project-btn:hover {
+                opacity: 1;
+                color: var(--danger-color);
+                transform: scale(1.1);
+            }
+            .history-header #export-history-btn:hover {
+                color: var(--text-color);
+                background-color: rgba(255,255,255,0.05);
+                border-color: var(--card-border-color);
+            }
+            .graph-cell:hover {
+                transform: scale(1.2);
+            }
+            .timeline-content:hover {
+                transform: translateY(-2px);
+                background-color: rgba(0,0,0,0.2);
+                box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            }
+            .timeline-content:hover .timeline-item-actions {
+                opacity: 1;
+            }
+            .timeline-action-btn:hover {
+                background: rgba(255,255,255,0.2);
+            }
+            .timeline-action-btn.delete:hover {
+                color: var(--danger-color);
+            }
+            input[type="color"]:hover::-webkit-color-swatch {
+                transform: scale(1.1);
+            }
+            .theme-toggle-label:hover {
+                transform: scale(1.05);
+            }
+            .ambient-sound-btn:hover {
+                border-color: var(--accent-color);
+                color: var(--accent-color);
+            }
+            .danger-btn:hover {
+                background-color: color-mix(in srgb, var(--danger-color) 85%, black);
+                transform: translateY(-2px);
+                box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4);
+                animation: shake 0.3s ease-in-out;
+            }
+            #fullscreen-skip-btn:hover {
+                transform: scale(1.05);
+                box-shadow: 0 0 15px rgba(255,255,255,0.2);
+            }
+            #save-note-btn:hover, #start-focus-btn:hover, #add-project-btn:hover {
+                filter: brightness(1.1);
+                transform: scale(1.02);
+            }
+        }
+
+        /* Penyesuaian responsif tambahan */
+        @media (min-width: 768px) {
+            .timer-progress-wrapper {
+                width: 320px;
+                height: 320px;
+            }
+            .timer-section {
+                padding-top: 0;
+            }
+            .top-buttons {
+                top: 2rem;
+                right: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Latar Belakang & Efek Mouse -->
+    <div class="aurora-container">
+        <div class="aurora one"></div>
+        <div class="aurora two"></div>
+        <div class="aurora three"></div>
+    </div>
+    <div id="mouse-light"></div>
+
+    <!-- Kontainer Utama Aplikasi -->
+    <div class="app-container">
+        <!-- Bagian Timer Utama -->
+        <main class="timer-section">
+            <div class="top-buttons">
+                <button class="fullscreen-btn" title="Mode Fokus Penuh (F)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+                </button>
+                <button class="settings-btn" title="Pengaturan (S)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                </button>
+            </div>
+            
+            <p id="mode-display">Fokus</p>
+            <div class="timer-progress-wrapper">
+                <svg class="timer-progress-ring" viewBox="0 0 100 100">
+                    <circle class="timer-progress-ring__background" cx="50" cy="50" r="45"></circle>
+                    <circle id="progress-circle" class="timer-progress-ring__circle" cx="50" cy="50" r="45"></circle>
+                </svg>
+                <h1 id="time-display">25:00</h1>
+            </div>
+            <div class="controls">
+                <button id="start-pause-btn" class="control-btn" aria-label="Mulai atau Jeda Timer">
+                    <svg id="play-icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                    <svg id="pause-icon" viewBox="0 0 24 24" style="display: none;"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path></svg>
+                </button>
+                <button id="reset-btn" class="control-btn" title="Reset Timer (R)" aria-label="Reset Timer">
+                    <svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"></path></svg>
+                </button>
+            </div>
+            <p id="quote-display"></p>
+        </main>
+
+        <!-- Sidebar (Statistik, Tugas, Riwayat) -->
+        <aside class="sidebar">
+            <div class="sidebar-tabs">
+                <button class="tab-btn active" data-tab="stats"><svg viewBox="0 0 24 24"><path d="M16,11V3H8v6H2v12h20V11H16z M10,5h4v14h-4V5z M4,13h4v6H4V13z M20,19h-4v-6h4V19z"></path></svg> Statistik</button>
+                <button class="tab-btn" data-tab="tasks"><svg viewBox="0 0 24 24"><path d="M22,7h-2V5c0-1.1-0.9-2-2-2h-4c-1.1,0-2,0.9-2,2v2H8V5c0-1.1-0.9-2-2-2H2C0.9,3,0,3.9,0,5v14c0,1.1,0.9,2,2,2h4 c1.1,0,2-0.9,2-2v-2h4v2c0,1.1,0.9,2,2,2h4c1.1,0,2-0.9,2-2V9C24,7.9,23.1,7,22,7z"></path></svg> Tugas</button>
+                <button class="tab-btn" data-tab="history"><svg viewBox="0 0 24 24"><path d="M13,3c-4.97,0-9,4.03-9,9H1l4,4l4-4H6c0-3.86,3.14-7,7-7s7,3.14,7,7s-3.14,7-7,7c-1.93,0-3.68-0.79-4.94-2.06l-1.41,1.41 C6.02,19.74,7.89,21,10,21c4.97,0,9-4.03,9-9S17.97,3,13,3z M12,8v5l4.28,2.54l0.72-1.21l-3.5-2.08V8H12z"></path></svg> Riwayat</button>
+                <div class="tab-indicator"></div>
+            </div>
+
+            <!-- Konten Statistik -->
+            <div id="stats-content" class="tab-content active">
+                <h3>Progres Anda</h3>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <h4>Sesi Hari Ini</h4>
+                        <p id="sessions-today">0</p>
+                    </div>
+                    <div class="stat-item">
+                        <h4>Runtutan 🔥</h4>
+                        <p id="streak-days">0 hari</p>
+                    </div>
+                </div>
+                <div class="daily-goal-tracker">
+                    <h4>Sasaran Harian</h4>
+                    <div id="goal-dots"></div>
+                </div>
+                <canvas id="stats-chart" style="margin-top: 1.5rem;"></canvas>
+            </div>
+
+            <!-- [DISEMPURNAKAN] Konten Daftar Tugas -->
+            <div id="tasks-content" class="tab-content">
+                <div class="tasks-header">
+                     <h3>Daftar Tugas</h3>
+                     <button id="manage-projects-btn">Kelola Proyek</button>
+                </div>
+                <form id="todo-form">
+                    <input type="text" id="todo-input" placeholder="Tambah tugas baru..." autocomplete="off">
+                    <select id="todo-project-select"></select>
+                    <button id="add-todo-btn" type="submit" aria-label="Tambah Tugas">+</button>
+                </form>
+                <!-- [BARU] Kontrol Filter Tugas -->
+                <div class="todo-filters">
+                    <button class="filter-btn active" data-filter="all">Semua</button>
+                    <button class="filter-btn" data-filter="active">Aktif</button>
+                    <button class="filter-btn" data-filter="completed">Selesai</button>
+                </div>
+                <ul id="todo-list"></ul>
+            </div>
+
+            <!-- Konten Riwayat -->
+            <div id="history-content" class="tab-content">
+                <!-- Konten akan di-generate oleh JavaScript -->
+            </div>
+        </aside>
+    </div>
+
+    <!-- Kontainer Mode Fokus Layar Penuh -->
+    <div id="fullscreen-container">
+        <header id="fullscreen-header">
+            <div></div> <!-- Spacer -->
+            <p id="fullscreen-clock"></p>
+        </header>
+        <main id="fullscreen-main">
+            <h2 id="fullscreen-task-display"></h2>
+            <div class="timer-progress-wrapper">
+                <div id="fullscreen-state-icon"></div>
+                <svg class="timer-progress-ring" viewBox="0 0 100 100">
+                    <circle class="timer-progress-ring__background" cx="50" cy="50" r="45"></circle>
+                    <circle id="progress-circle-fullscreen" class="timer-progress-ring__circle" cx="50" cy="50" r="45"></circle>
+                </svg>
+                <h1 id="time-display-fullscreen">25:00</h1>
+            </div>
+            <p id="fullscreen-session-count"></p>
+            <div id="fullscreen-controls">
+                <button id="fullscreen-skip-btn">Lewati</button>
+            </div>
+        </main>
+        <footer id="fullscreen-footer">
+            <p id="fullscreen-exit-hint">Tekan 'F' untuk keluar</p>
+            <div></div> <!-- Spacer -->
+        </footer>
+    </div>
+
+    <!-- Modal Pengaturan -->
+    <div id="settings-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Pengaturan</h2>
+                <button class="close-modal-btn" aria-label="Tutup Modal">&times;</button>
+            </div>
+            <form id="settings-form">
+                <div class="setting-group">
+                    <h3>Durasi Timer (menit)</h3>
+                    <div class="time-inputs">
+                        <div>
+                            <label for="work-duration">Fokus</label>
+                            <input type="number" id="work-duration" min="1">
+                        </div>
+                        <div>
+                            <label for="short-break-duration">Istirahat Pendek</label>
+                            <input type="number" id="short-break-duration" min="1">
+                        </div>
+                        <div>
+                            <label for="long-break-duration">Istirahat Panjang</label>
+                            <input type="number" id="long-break-duration" min="1">
+                        </div>
+                    </div>
+                </div>
+                <div class="setting-group">
+                    <h3>Tema & Warna</h3>
+                    <div class="setting-item">
+                        <label for="theme-toggle">Mode Tampilan</label>
+                        <div class="theme-toggle-wrapper">
+                            <input type="checkbox" id="theme-toggle">
+                            <label for="theme-toggle" class="theme-toggle-label">
+                                <div class="stars">
+                                    <div class="star"></div>
+                                    <div class="star"></div>
+                                    <div class="star"></div>
+                                </div>
+                                <div class="toggle-handle"></div>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="setting-item">
+                        <label for="accent-color-picker">Warna Aksen</label>
+                        <div class="color-picker-wrapper">
+                           <input type="color" id="accent-color-picker">
+                        </div>
+                    </div>
+                     <div class="setting-item">
+                        <label for="timer-color-picker">Warna Timer</label>
+                         <div class="color-picker-wrapper">
+                           <input type="color" id="timer-color-picker">
+                        </div>
+                    </div>
+                </div>
+                 <div class="setting-group">
+                    <h3>Suara Latar</h3>
+                    <div class="ambient-sound-options">
+                        <button type="button" class="ambient-sound-btn" data-sound="none">Hening</button>
+                        <button type="button" class="ambient-sound-btn" data-sound="rain">Hujan</button>
+                        <button type="button" class="ambient-sound-btn" data-sound="calm">Tenang</button>
+                    </div>
+                    <label for="ambient-volume-slider" style="margin-top: 1rem;">Volume Latar</label>
+                    <input type="range" id="ambient-volume-slider" min="0" max="1" step="0.05">
+                </div>
+                <div class="setting-group">
+                    <h3>Suara Alarm & Timer</h3>
+                    <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem;">
+                        <select id="alarm-sound" style="flex: 1;">
+                            <option value="ding">Ding</option>
+                            <option value="bell">Bell</option>
+                            <option value="chime">Chime</option>
+                        </select>
+                        <input type="range" id="alarm-volume-slider" min="0" max="1" step="0.1" style="flex: 1;">
+                    </div>
+                    <div class="checkbox-group">
+                        <span>Aktifkan suara detak timer</span>
+                        <input type="checkbox" id="tick-sound-enabled"/>
+                        <label for="tick-sound-enabled" class="toggle-label">Toggle</label>
+                    </div>
+                </div>
+                <div class="setting-group">
+                    <h3>Lainnya</h3>
+                     <div style="margin-bottom: 1.5rem;">
+                        <label for="daily-goal">Sasaran Sesi Harian</label>
+                        <input type="number" id="daily-goal" min="1" max="20">
+                    </div>
+                    <div class="checkbox-group" style="margin-bottom: 1.5rem;">
+                        <span>Mulai sesi berikutnya otomatis</span>
+                        <input type="checkbox" id="auto-start"/>
+                        <label for="auto-start" class="toggle-label">Toggle</label>
+                    </div>
+                    <button type="button" id="reset-data-btn" class="danger-btn">Reset Semua Data</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Modal Catatan Sesi -->
+    <div id="note-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Sesi Selesai!</h2>
+                <button class="close-modal-btn" aria-label="Tutup Modal">&times;</button>
+            </div>
+            <p>Apa yang sudah kamu kerjakan di sesi ini?</p>
+            <textarea id="note-input" placeholder="Contoh: Menyelesaikan laporan bab 1..."></textarea>
+            <button id="save-note-btn">Simpan Catatan</button>
+        </div>
+    </div>
+
+    <!-- Modal Tugas Fokus -->
+    <div id="focus-task-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Fokus Pada Apa?</h2>
+                <button class="close-modal-btn" aria-label="Tutup Modal">&times;</button>
+            </div>
+            <p>Pilih tugas dari daftar untuk ditautkan ke sesi fokus ini.</p>
+            <select id="focus-task-select"></select>
+            <button id="start-focus-btn">Mulai Sesi Fokus</button>
+        </div>
+    </div>
+
+    <!-- [BARU] Modal Manajemen Proyek -->
+    <div id="project-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Kelola Proyek</h2>
+                <button class="close-modal-btn" aria-label="Tutup Modal">&times;</button>
+            </div>
+            <form id="project-form">
+                <input type="text" id="project-input" placeholder="Nama proyek baru..." autocomplete="off">
+                <button id="add-project-btn" type="submit">Tambah</button>
+            </form>
+            <ul id="project-list"></ul>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Selektor DOM yang Dikelompokkan ---
+            const DOMElements = {
+                appContainer: document.querySelector('.app-container'),
+                sidebar: document.querySelector('.sidebar'),
+                timeDisplay: document.getElementById('time-display'),
+                timeDisplayFullscreen: document.getElementById('time-display-fullscreen'),
+                modeDisplay: document.getElementById('mode-display'),
+                startPauseBtn: document.getElementById('start-pause-btn'),
+                playIcon: document.getElementById('play-icon'),
+                pauseIcon: document.getElementById('pause-icon'),
+                resetBtn: document.getElementById('reset-btn'),
+                progressCircle: document.getElementById('progress-circle'),
+                progressCircleFullscreen: document.getElementById('progress-circle-fullscreen'),
+                quoteDisplay: document.getElementById('quote-display'),
+                favicon: document.getElementById('favicon'),
+                mouseLight: document.getElementById('mouse-light'),
+                settingsBtn: document.querySelector('.settings-btn'),
+                settingsModal: document.getElementById('settings-modal'),
+                closeModalBtns: document.querySelectorAll('.close-modal-btn'),
+                settingsForm: document.getElementById('settings-form'),
+                themeToggle: document.getElementById('theme-toggle'),
+                accentColorPicker: document.getElementById('accent-color-picker'),
+                timerColorPicker: document.getElementById('timer-color-picker'),
+                resetDataBtn: document.getElementById('reset-data-btn'),
+                fullscreenBtn: document.querySelector('.fullscreen-btn'),
+                fullscreenContainer: document.getElementById('fullscreen-container'),
+                fullscreenTaskDisplay: document.getElementById('fullscreen-task-display'),
+                fullscreenSessionCount: document.getElementById('fullscreen-session-count'),
+                fullscreenStateIcon: document.getElementById('fullscreen-state-icon'),
+                fullscreenSkipBtn: document.getElementById('fullscreen-skip-btn'),
+                fullscreenClock: document.getElementById('fullscreen-clock'),
+                fullscreenExitHint: document.getElementById('fullscreen-exit-hint'),
+                sessionsTodayDisplay: document.getElementById('sessions-today'),
+                streakDaysDisplay: document.getElementById('streak-days'),
+                goalDotsContainer: document.getElementById('goal-dots'),
+                statsChartCanvas: document.getElementById('stats-chart'),
+                tabBtns: document.querySelectorAll('.tab-btn'),
+                tabContents: document.querySelectorAll('.tab-content'),
+                tabIndicator: document.querySelector('.tab-indicator'),
+                // [DISEMPURNAKAN] Selektor untuk menu tugas
+                todoForm: document.getElementById('todo-form'),
+                todoInput: document.getElementById('todo-input'),
+                todoList: document.getElementById('todo-list'),
+                todoProjectSelect: document.getElementById('todo-project-select'),
+                todoFilters: document.querySelector('.todo-filters'),
+                historyContent: document.getElementById('history-content'),
+                noteModal: document.getElementById('note-modal'),
+                noteInput: document.getElementById('note-input'),
+                saveNoteBtn: document.getElementById('save-note-btn'),
+                focusTaskModal: document.getElementById('focus-task-modal'),
+                focusTaskSelect: document.getElementById('focus-task-select'),
+                startFocusBtn: document.getElementById('start-focus-btn'),
+                // [BARU] Elemen untuk Manajemen Proyek
+                manageProjectsBtn: document.getElementById('manage-projects-btn'),
+                projectModal: document.getElementById('project-modal'),
+                projectForm: document.getElementById('project-form'),
+                projectInput: document.getElementById('project-input'),
+                projectList: document.getElementById('project-list'),
+            };
+
+            // --- Variabel State ---
+            let timerInterval = null;
+            let clockInterval = null;
+            let timeLeft = 0;
+            let currentMode = 'work';
+            let isRunning = false;
+            let workSessionCount = 0;
+            let lastDisplayedTime = "";
+            let focusedTaskInfo = { id: null, text: null, project: null }; // [DISEMPURNAKAN]
+            let lastCompletedMode = 'work';
+            let activeHistoryFilter = 'all';
+            let activeHistoryPeriod = 'week'; 
+            let activeHistoryProject = 'all'; 
+            let lastTap = 0; 
+            let activeTodoFilter = 'all'; // [BARU] State untuk filter tugas
+
+            // --- Objek Data Aplikasi ---
+            let appData = {
+                stats: {
+                    sessionsToday: 0,
+                    totalFocusTime: 0,
+                    totalSessionsAllTime: 0,
+                    lastSessionDate: null,
+                    currentStreak: 0,
+                    lastActiveDate: null,
+                    weeklyData: [0, 0, 0, 0, 0, 0, 0]
+                },
+                todos: [],
+                history: [],
+                settings: {
+                    workDuration: 25,
+                    shortBreakDuration: 5,
+                    longBreakDuration: 15,
+                    theme: 'dark',
+                    accentColor: '#ffffff',
+                    timerTextColor: '#ffffff',
+                    alarmSound: 'ding',
+                    alarmVolume: 0.5,
+                    autoStart: false,
+                    ambientSound: 'none',
+                    ambientVolume: 0.2,
+                    tickSoundEnabled: false,
+                    dailyGoal: 8,
+                    projects: ['Umum'],
+                }
+            };
+
+            const quotes = [
+                "Setiap langkah kecil membawamu lebih dekat ke tujuan besar.",
+                "Hari ini adalah kesempatan baru untuk menjadi lebih baik dari kemarin.",
+                "Fokus pada kemajuan, bukan kesempurnaan. Setiap usaha dihitung.",
+                "Istirahat sejenak adalah bagian dari proses. Kembalilah dengan semangat baru.",
+                "Percayalah pada proses. Hasil hebat membutuhkan waktu dan kesabaran.",
+                "Setiap detik yang kamu gunakan untuk fokus adalah investasi untuk masa depanmu.",
+            ];
+
+            // --- Manajemen Audio ---
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            let activeAmbientSource = null;
+            const ambientGainNode = audioContext.createGain();
+            ambientGainNode.connect(audioContext.destination);
+
+            function playSound(type, volume, duration = 0.3) {
+                if (audioContext.state === 'suspended') audioContext.resume();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                gainNode.gain.setValueAtTime(volume, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.00001, audioContext.currentTime + duration);
+
+                switch (type) {
+                    case 'ding': oscillator.type = 'sine'; oscillator.frequency.setValueAtTime(987.77, audioContext.currentTime); break;
+                    case 'bell': oscillator.type = 'triangle'; oscillator.frequency.setValueAtTime(783.99, audioContext.currentTime); break;
+                    case 'chime': oscillator.type = 'square'; oscillator.frequency.setValueAtTime(1318.51, audioContext.currentTime); break;
+                    case 'tick': oscillator.type = 'sine'; oscillator.frequency.setValueAtTime(1200, audioContext.currentTime); break;
+                }
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + duration);
+            }
+
+            function stopAmbientSound() {
+                if (activeAmbientSource) {
+                    activeAmbientSource.stop();
+                    activeAmbientSource = null;
+                }
+            }
+            
+            function playAmbientSound(type) {
+                stopAmbientSound();
+                if (type === 'none') return;
+                if (audioContext.state === 'suspended') audioContext.resume();
+
+                let source;
+                const bufferSize = 2 * audioContext.sampleRate;
+                const noiseBuffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+                const output = noiseBuffer.getChannelData(0);
+
+                if (type === 'rain') {
+                    for (let i = 0; i < bufferSize; i++) { output[i] = Math.random() * 2 - 1; }
+                } else if (type === 'calm') {
+                    let lastOut = 0.0;
+                    for (let i = 0; i < bufferSize; i++) {
+                        const white = Math.random() * 2 - 1;
+                        output[i] = (lastOut + (0.02 * white)) / 1.02;
+                        lastOut = output[i];
+                        output[i] *= 3.5;
+                    }
+                }
+                source = audioContext.createBufferSource();
+                source.buffer = noiseBuffer;
+                source.loop = true;
+
+                if (source) {
+                    source.connect(ambientGainNode);
+                    source.start();
+                    activeAmbientSource = source;
+                }
+            }
+
+            // --- Logika Inti Timer ---
+            const circles = [DOMElements.progressCircle, DOMElements.progressCircleFullscreen];
+            const radius = 45;
+            const circumference = radius * 2 * Math.PI;
+            circles.forEach(c => c.style.strokeDasharray = `${circumference} ${circumference}`);
+            
+            function setProgress(percent) {
+                const offset = circumference * (1 - percent / 100);
+                circles.forEach(c => c.style.strokeDashoffset = offset);
+            }
+
+            function updateTimerDisplay() {
+                const minutes = Math.floor(timeLeft / 60);
+                const seconds = timeLeft % 60;
+                const display = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                document.title = `${display} - FocusFlow`;
+                DOMElements.favicon.href = `data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>${isRunning ? '⏳' : '⏱️'}</text></svg>`;
+
+                if (display !== lastDisplayedTime) {
+                    let newHTML = '';
+                    for (let i = 0; i < display.length; i++) {
+                        const oldChar = lastDisplayedTime[i] || '';
+                        const newChar = display[i];
+                        newHTML += `<span class="digit ${newChar !== oldChar ? 'changing' : ''}">${newChar}</span>`;
+                    }
+                    DOMElements.timeDisplay.innerHTML = newHTML;
+                    DOMElements.timeDisplayFullscreen.innerHTML = newHTML;
+                    
+                    setTimeout(() => {
+                        document.querySelectorAll('.digit.changing').forEach(d => d.classList.remove('changing'));
+                    }, 50);
+                }
+                lastDisplayedTime = display;
+            }
+
+            function updateFullscreenDisplays() {
+                if (currentMode === 'work') {
+                    const sessionInCycle = (workSessionCount % 4) + 1;
+                    DOMElements.fullscreenSessionCount.textContent = `Sesi ${sessionInCycle} / 4`;
+                    DOMElements.fullscreenTaskDisplay.textContent = (focusedTaskInfo.text && focusedTaskInfo.id !== 'general') ? `Fokus: ${focusedTaskInfo.text}` : 'Sesi Fokus';
+                } else {
+                    DOMElements.fullscreenSessionCount.textContent = 'Waktunya Istirahat';
+                    DOMElements.fullscreenTaskDisplay.textContent = '';
+                }
+            }
+
+            function showFullscreenStateIcon() {
+                const icon = isRunning ? 
+                    '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>' : 
+                    '<svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path></svg>';
+                DOMElements.fullscreenStateIcon.innerHTML = icon;
+                DOMElements.fullscreenStateIcon.classList.add('active');
+                setTimeout(() => DOMElements.fullscreenStateIcon.classList.remove('active'), 500);
+            }
+
+            function startTimer() {
+                if (isRunning) return;
+                isRunning = true;
+                updateUIForTimerState();
+                displayRandomQuote();
+
+                timerInterval = setInterval(() => {
+                    timeLeft--;
+                    if (currentMode === 'work') {
+                        appData.stats.totalFocusTime++;
+                        saveData('stats');
+                    }
+                    if (appData.settings.tickSoundEnabled) playSound('tick', 0.05, 0.1);
+                    
+                    updateTimerDisplay();
+                    const totalDuration = appData.settings[`${currentMode}Duration`] * 60;
+                    setProgress((timeLeft / totalDuration) * 100);
+
+                    if (timeLeft < 0) { 
+                        clearInterval(timerInterval);
+                        playSound(appData.settings.alarmSound, appData.settings.alarmVolume);
+                        showNotification(`${DOMElements.modeDisplay.textContent} selesai!`);
+                        lastCompletedMode = currentMode;
+                        switchMode(); // Dipanggil tanpa argumen, jadi isSkipped = false
+                    }
+                }, 1000);
+            }
+            
+            function handleStartClick() {
+                if (document.body.classList.contains('fullscreen-focus')) showFullscreenStateIcon();
+                if (isRunning) {
+                    pauseTimer();
+                    return;
+                }
+                
+                const uncompletedTodos = appData.todos.filter(t => !t.completed);
+                if(currentMode === 'work' && uncompletedTodos.length > 0) {
+                    DOMElements.focusTaskSelect.innerHTML = '<option value="general">Fokus umum (tanpa tugas)</option>';
+                    uncompletedTodos.forEach(task => {
+                        const option = document.createElement('option');
+                        option.value = task.id;
+                        option.textContent = `${task.text} [${task.project}]`;
+                        DOMElements.focusTaskSelect.appendChild(option);
+                    });
+                    showModal(DOMElements.focusTaskModal);
+                } else {
+                    focusedTaskInfo = { id: null, text: null, project: null };
+                    startTimer();
+                }
+            }
+
+            function pauseTimer() {
+                if (!isRunning) return;
+                isRunning = false;
+                clearInterval(timerInterval);
+                updateUIForTimerState();
+            }
+
+            function resetTimer() {
+                pauseTimer();
+                timeLeft = appData.settings[`${currentMode}Duration`] * 60;
+                updateTimerDisplay();
+                setProgress(100);
+                focusedTaskInfo = { id: null, text: null, project: null };
+                updateFullscreenDisplays();
+            }
+            
+            function updateUIForTimerState() {
+                DOMElements.playIcon.style.display = isRunning ? 'none' : 'block';
+                DOMElements.pauseIcon.style.display = isRunning ? 'block' : 'none';
+                DOMElements.startPauseBtn.classList.toggle('active', isRunning);
+                document.documentElement.classList.toggle('break-theme', currentMode !== 'work' && currentMode !== 'longBreak');
+            }
+
+            function handleSessionContinuation() {
+                if (appData.settings.autoStart) {
+                    setTimeout(startTimer, 1000);
+                }
+            }
+            
+            // --- [FUNGSI DIPERBAIKI] ---
+            // Fungsi ini sekarang menerima parameter opsional 'isSkipped'
+            // untuk membedakan antara sesi yang selesai normal dan yang dilewati.
+            function switchMode(isSkipped = false) {
+                // Sesi fokus baru saja selesai
+                if (lastCompletedMode === 'work') {
+                    appData.stats.sessionsToday++;
+                    appData.stats.totalSessionsAllTime++;
+                    updateStreak();
+                    if (appData.stats.sessionsToday === appData.settings.dailyGoal) {
+                        showNotification("Selamat! Sasaran harian tercapai!");
+                    }
+                    saveData('stats');
+                    updateStatsDisplay();
+                    drawStatsChart();
+                    renderDailyGoal();
+                    
+                    workSessionCount++;
+                    currentMode = (workSessionCount % 4 === 0) ? 'longBreak' : 'shortBreak';
+                    DOMElements.modeDisplay.textContent = (currentMode === 'longBreak') ? 'Istirahat Panjang' : 'Istirahat Pendek';
+                    
+                    // Logika baru untuk menangani sesi yang dilewati vs selesai normal
+                    if (isSkipped) {
+                        saveNote("Sesi fokus dilewati.", true);
+                        handleSessionContinuation();
+                    } else {
+                        // Tampilkan modal catatan untuk sesi yang selesai normal
+                        showNoteModal(); 
+                    }
+
+                } else { // Sesi istirahat baru saja selesai
+                    saveNote(isSkipped ? "Sesi istirahat dilewati." : "Sesi istirahat selesai.", true);
+                    currentMode = 'work';
+                    DOMElements.modeDisplay.textContent = 'Fokus';
+
+                    // Lanjutkan ke sesi fokus berikutnya jika otomatis diaktifkan
+                    handleSessionContinuation();
+                }
+                
+                resetTimer();
+                updateFullscreenDisplays();
+                updateUIForTimerState();
+            }
+
+            function loadData() {
+                const savedSettings = localStorage.getItem('focusFlowSettings');
+                const savedStats = localStorage.getItem('focusFlowStats');
+                const savedTodos = localStorage.getItem('focusFlowTodos');
+                const savedHistory = localStorage.getItem('focusFlowHistory');
+
+                if (savedSettings) appData.settings = { ...appData.settings, ...JSON.parse(savedSettings) };
+                if (savedStats) appData.stats = { ...appData.stats, ...JSON.parse(savedStats) };
+                if (savedTodos) appData.todos = JSON.parse(savedTodos);
+                if (savedHistory) appData.history = JSON.parse(savedHistory);
+                
+                if (!appData.settings.projects) {
+                    appData.settings.projects = ['Umum'];
+                }
+                appData.todos.forEach(todo => {
+                    if (typeof todo.priority === 'undefined') {
+                        todo.priority = 'normal';
+                    }
+                });
+            }
+            
+            function saveData(key) {
+                localStorage.setItem(`focusFlow${key.charAt(0).toUpperCase() + key.slice(1)}`, JSON.stringify(appData[key]));
+            }
+
+            function applySettings() {
+                document.getElementById('work-duration').value = appData.settings.workDuration;
+                document.getElementById('short-break-duration').value = appData.settings.shortBreakDuration;
+                document.getElementById('long-break-duration').value = appData.settings.longBreakDuration;
+                DOMElements.themeToggle.checked = appData.settings.theme === 'light';
+                DOMElements.accentColorPicker.value = appData.settings.accentColor;
+                DOMElements.timerColorPicker.value = appData.settings.timerTextColor;
+                document.getElementById('alarm-sound').value = appData.settings.alarmSound;
+                document.getElementById('alarm-volume-slider').value = appData.settings.alarmVolume;
+                document.getElementById('ambient-volume-slider').value = appData.settings.ambientVolume;
+                document.getElementById('auto-start').checked = appData.settings.autoStart;
+                document.getElementById('tick-sound-enabled').checked = appData.settings.tickSoundEnabled;
+                document.getElementById('daily-goal').value = appData.settings.dailyGoal;
+                
+                applyTheme(appData.settings.theme);
+                applyAccentColor(appData.settings.accentColor);
+                applyTimerTextColor(appData.settings.timerTextColor);
+                updateAmbientSoundUI(appData.settings.ambientSound);
+                ambientGainNode.gain.value = appData.settings.ambientVolume;
+                playAmbientSound(appData.settings.ambientSound);
+                resetTimer();
+            }
+
+            function handleSettingsChange() {
+                appData.settings.workDuration = parseInt(document.getElementById('work-duration').value) || 25;
+                appData.settings.shortBreakDuration = parseInt(document.getElementById('short-break-duration').value) || 5;
+                appData.settings.longBreakDuration = parseInt(document.getElementById('long-break-duration').value) || 15;
+                appData.settings.theme = DOMElements.themeToggle.checked ? 'light' : 'dark';
+                appData.settings.accentColor = DOMElements.accentColorPicker.value;
+                appData.settings.timerTextColor = DOMElements.timerColorPicker.value;
+                appData.settings.alarmSound = document.getElementById('alarm-sound').value;
+                appData.settings.alarmVolume = document.getElementById('alarm-volume-slider').value;
+                appData.settings.ambientVolume = document.getElementById('ambient-volume-slider').value;
+                appData.settings.autoStart = document.getElementById('auto-start').checked;
+                appData.settings.tickSoundEnabled = document.getElementById('tick-sound-enabled').checked;
+                appData.settings.dailyGoal = parseInt(document.getElementById('daily-goal').value) || 8;
+
+                saveData('settings');
+                applySettings();
+                renderDailyGoal();
+                resetTimer();
+            }
+
+            function applyTheme(theme) {
+                document.documentElement.classList.toggle('light-mode', theme === 'light');
+                drawStatsChart();
+            }
+
+            function applyAccentColor(color) {
+                document.documentElement.style.setProperty('--accent-color', color);
+                drawStatsChart();
+                renderDailyGoal();
+                const activeTab = document.querySelector('.tab-btn.active');
+                if(activeTab) updateTabIndicator(activeTab);
+                if (document.getElementById('history-content').classList.contains('active')) {
+                    renderHistory();
+                }
+            }
+            
+            function applyTimerTextColor(color) {
+                document.documentElement.style.setProperty('--timer-text-color', color);
+            }
+            
+            function updateAmbientSoundUI(sound) {
+                 document.querySelectorAll('.ambient-sound-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.sound === sound);
+                });
+            }
+
+            function requestNotificationPermission() {
+                if ('Notification' in window && Notification.permission !== 'granted') {
+                    Notification.requestPermission();
+                }
+            }
+
+            function showNotification(message) {
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    new Notification('FocusFlow', {
+                        body: message,
+                        icon: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎉</text></svg>'
+                    });
+                }
+            }
+
+            const getTodayString = () => new Date().toLocaleDateString('en-CA');
+
+            function initializeStats() {
+                const today = getTodayString();
+                if (appData.stats.lastSessionDate !== today) appData.stats.sessionsToday = 0;
+                
+                const lastActive = appData.stats.lastActiveDate ? new Date(appData.stats.lastActiveDate) : null;
+                const yesterday = new Date();
+                yesterday.setDate(yesterday.getDate() - 1);
+                
+                if (lastActive && lastActive.toLocaleDateString('en-CA') !== yesterday.toLocaleDateString('en-CA') && lastActive.toLocaleDateString('en-CA') !== today) {
+                    appData.stats.currentStreak = 0;
+                } else if (!lastActive) {
+                    appData.stats.currentStreak = 0;
+                }
+                saveData('stats');
+            }
+            
+            function updateStreak() {
+                const today = getTodayString();
+                const yesterday = new Date();
+                yesterday.setDate(yesterday.getDate() - 1);
+                const yesterdayString = yesterday.toLocaleDateString('en-CA');
+
+                if (appData.stats.lastActiveDate === yesterdayString) {
+                    appData.stats.currentStreak++;
+                } else if (appData.stats.lastActiveDate !== today) {
+                    appData.stats.currentStreak = 1;
+                }
+                appData.stats.lastActiveDate = today;
+                appData.stats.lastSessionDate = today;
+            }
+
+            function updateStatsDisplay() {
+                DOMElements.sessionsTodayDisplay.textContent = appData.stats.sessionsToday;
+                DOMElements.streakDaysDisplay.textContent = `${appData.stats.currentStreak} hari`;
+            }
+            
+            function renderDailyGoal() {
+                DOMElements.goalDotsContainer.innerHTML = '';
+                for (let i = 1; i <= appData.settings.dailyGoal; i++) {
+                    const dot = document.createElement('div');
+                    dot.className = 'goal-dot';
+                    if (i <= appData.stats.sessionsToday) dot.classList.add('completed');
+                    DOMElements.goalDotsContainer.appendChild(dot);
+                }
+            }
+
+            let statsChartInstance = null;
+            function drawStatsChart() {
+                if (!window.Chart) return;
+                const ctx = DOMElements.statsChartCanvas.getContext('2d');
+                appData.stats.weeklyData[new Date().getDay()] = appData.stats.sessionsToday;
+
+                if (statsChartInstance) statsChartInstance.destroy();
+
+                statsChartInstance = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'],
+                        datasets: [{
+                            label: 'Sesi Selesai',
+                            data: appData.stats.weeklyData,
+                            backgroundColor: appData.settings.accentColor,
+                            borderRadius: 4,
+                            borderSkipped: false,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: { callbacks: { label: (context) => `${context.raw} sesi` } }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: 'rgba(128, 128, 128, 0.2)' },
+                                ticks: { 
+                                    color: appData.settings.theme === 'light' ? '#1a1a1a' : '#e0e0e0',
+                                    stepSize: 1
+                                }
+                            },
+                            x: {
+                                grid: { display: false },
+                                ticks: { color: appData.settings.accentColor }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // --- [DISEMPURNAKAN] Logika Proyek & Tugas ---
+            function renderProjects() {
+                DOMElements.projectList.innerHTML = '';
+                appData.settings.projects.forEach(project => {
+                    const li = document.createElement('li');
+                    li.className = 'project-item';
+                    li.innerHTML = `
+                        <span>${project}</span>
+                        ${project !== 'Umum' ? `<button class="delete-project-btn" data-project="${project}">&times;</button>` : ''}
+                    `;
+                    DOMElements.projectList.appendChild(li);
+                });
+                
+                DOMElements.todoProjectSelect.innerHTML = '';
+                appData.settings.projects.forEach(project => {
+                    const option = document.createElement('option');
+                    option.value = project;
+                    option.textContent = project;
+                    DOMElements.todoProjectSelect.appendChild(option);
+                });
+            }
+
+            function addProject(e) {
+                e.preventDefault();
+                const newProject = DOMElements.projectInput.value.trim();
+                if (newProject && !appData.settings.projects.includes(newProject)) {
+                    appData.settings.projects.push(newProject);
+                    saveData('settings');
+                    renderProjects();
+                    DOMElements.projectInput.value = '';
+                } else if (appData.settings.projects.includes(newProject)) {
+                    alert('Proyek dengan nama tersebut sudah ada.');
+                }
+            }
+
+            function deleteProject(projectName) {
+                if (projectName === 'Umum' || !confirm(`Anda yakin ingin menghapus proyek "${projectName}"? Semua tugas dalam proyek ini akan dipindahkan ke "Umum".`)) {
+                    return;
+                }
+                
+                appData.todos.forEach(todo => {
+                    if (todo.project === projectName) {
+                        todo.project = 'Umum';
+                    }
+                });
+
+                appData.settings.projects = appData.settings.projects.filter(p => p !== projectName);
+
+                saveData('todos');
+                saveData('settings');
+                renderProjects();
+                renderTodos();
+            }
+
+            function renderTodos() {
+                const list = DOMElements.todoList;
+                list.innerHTML = '';
+
+                const filteredTodos = appData.todos.filter(todo => {
+                    if (activeTodoFilter === 'active') return !todo.completed;
+                    if (activeTodoFilter === 'completed') return todo.completed;
+                    return true;
+                });
+
+                const activeTasks = filteredTodos.filter(t => !t.completed);
+                const completedTasks = filteredTodos.filter(t => t.completed);
+
+                activeTasks.sort((a, b) => (b.priority === 'penting') - (a.priority === 'penting'));
+
+                activeTasks.forEach(todo => list.appendChild(createTodoElement(todo)));
+
+                if (activeTasks.length > 0 && completedTasks.length > 0) {
+                    const separator = document.createElement('li');
+                    separator.className = 'completed-separator';
+                    separator.textContent = 'Selesai';
+                    list.appendChild(separator);
+                }
+                
+                completedTasks.forEach(todo => list.appendChild(createTodoElement(todo)));
+            }
+
+            function createTodoElement(todo) {
+                const li = document.createElement('li');
+                li.className = `todo-item ${todo.completed ? 'completed' : ''} ${todo.priority === 'penting' ? 'priority-penting' : ''}`;
+                li.dataset.id = todo.id;
+                
+                const priorityIcon = todo.priority === 'penting' ?
+                    `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"></path></svg>` :
+                    `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M22 9.24l-7.19-.62L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.63-7.03L22 9.24zM12 15.4l-3.76 2.27 1-4.28-3.32-2.88 4.38-.38L12 6.1l1.71 4.04 4.38.38-3.32 2.88 1 4.28L12 15.4z"></path></svg>`;
+
+                li.innerHTML = `
+                    <div class="todo-checkbox-wrapper">
+                        <input type="checkbox" id="todo-${todo.id}" ${todo.completed ? 'checked' : ''}>
+                    </div>
+                    <div class="todo-content">
+                        <label for="todo-${todo.id}">${todo.text}</label>
+                        <span class="todo-project-tag">${todo.project || 'Umum'}</span>
+                    </div>
+                    <div class="todo-actions">
+                         <button class="todo-action-btn priority-btn ${todo.priority}" title="Prioritas">
+                            ${priorityIcon}
+                         </button>
+                         <button class="todo-action-btn edit-btn" title="Ubah">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a.9959.9959 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"></path></svg>
+                         </button>
+                         <button class="todo-action-btn delete-btn" title="Hapus">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"></path></svg>
+                         </button>
+                    </div>
+                `;
+                return li;
+            }
+
+            function addTodo(e) {
+                e.preventDefault();
+                const text = DOMElements.todoInput.value.trim();
+                const project = DOMElements.todoProjectSelect.value;
+                if (text) {
+                    appData.todos.unshift({ 
+                        text, 
+                        project, 
+                        completed: false, 
+                        id: Date.now(),
+                        priority: 'normal'
+                    });
+                    DOMElements.todoInput.value = '';
+                    saveData('todos');
+                    renderTodos();
+                }
+            }
+
+            function handleTodoListClick(e) {
+                const target = e.target;
+                const item = target.closest('.todo-item');
+                if (!item) return;
+
+                const todoId = parseInt(item.dataset.id);
+                const todoIndex = appData.todos.findIndex(t => t.id === todoId);
+                if (todoIndex === -1) return;
+
+                if (target.matches('input[type="checkbox"]')) {
+                    item.classList.add('completing');
+                    setTimeout(() => {
+                        appData.todos[todoIndex].completed = target.checked;
+                        saveData('todos');
+                        renderTodos();
+                    }, 400);
+                }
+                else if (target.closest('.delete-btn')) {
+                    item.classList.add('removing');
+                    item.addEventListener('animationend', () => {
+                        appData.todos.splice(todoIndex, 1);
+                        saveData('todos');
+                        renderTodos();
+                    });
+                }
+                else if (target.closest('.priority-btn')) {
+                    appData.todos[todoIndex].priority = appData.todos[todoIndex].priority === 'penting' ? 'normal' : 'penting';
+                    saveData('todos');
+                    renderTodos();
+                }
+                else if (target.closest('.edit-btn')) {
+                    enterEditMode(item, todoIndex);
+                }
+            }
+
+            function enterEditMode(item, todoIndex) {
+                item.classList.add('editing');
+                const contentDiv = item.querySelector('.todo-content');
+                const currentText = appData.todos[todoIndex].text;
+                
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.className = 'edit-todo-input';
+                input.value = currentText;
+
+                contentDiv.appendChild(input);
+                input.focus();
+                input.select();
+
+                const saveChanges = () => {
+                    const newText = input.value.trim();
+                    if (newText && newText !== currentText) {
+                        appData.todos[todoIndex].text = newText;
+                        saveData('todos');
+                    }
+                    renderTodos();
+                };
+
+                input.addEventListener('blur', saveChanges);
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') input.blur();
+                    if (e.key === 'Escape') {
+                        input.removeEventListener('blur', saveChanges);
+                        renderTodos();
+                    }
+                });
+            }
+            
+            let productivityChartInstance = null;
+
+            function renderHistory() {
+                const historyContainer = DOMElements.historyContent;
+                
+                let projectOptions = '<option value="all">Semua Proyek</option>';
+                appData.settings.projects.forEach(p => {
+                    projectOptions += `<option value="${p}" ${activeHistoryProject === p ? 'selected' : ''}>${p}</option>`;
+                });
+
+                historyContainer.innerHTML = `
+                    <div class="history-header">
+                        <h3>Wawasan & Riwayat</h3>
+                        <button id="export-history-btn">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"></path></svg>
+                            <span>Ekspor</span>
+                        </button>
+                    </div>
+                    
+                    <div class="history-analysis-section">
+                        <h3>Analisis Produktivitas</h3>
+                        <div class="period-toggle-group">
+                            <button class="period-toggle-btn ${activeHistoryPeriod === 'today' ? 'active' : ''}" data-period="today">Hari Ini</button>
+                            <button class="period-toggle-btn ${activeHistoryPeriod === 'week' ? 'active' : ''}" data-period="week">Minggu Ini</button>
+                            <button class="period-toggle-btn ${activeHistoryPeriod === 'month' ? 'active' : ''}" data-period="month">Bulan Ini</button>
+                        </div>
+                        <select id="history-project-filter">${projectOptions}</select>
+                        <div id="analysis-grid" class="analysis-grid"></div>
+                        <div id="productivity-chart-container" class="productivity-chart-container">
+                            <canvas id="productivity-chart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="contribution-graph-container">
+                        <div id="contribution-graph"></div>
+                    </div>
+                    <div class="history-controls">
+                        <div class="history-filter-group">
+                            <button class="history-filter-btn ${activeHistoryFilter === 'all' ? 'active' : ''}" data-filter="all">Semua</button>
+                            <button class="history-filter-btn ${activeHistoryFilter === 'work' ? 'active' : ''}" data-filter="work">Fokus</button>
+                            <button class="history-filter-btn ${activeHistoryFilter === 'break' ? 'active' : ''}" data-filter="break">Istirahat</button>
+                        </div>
+                        <input type="search" id="history-search" placeholder="Cari catatan, tugas, atau proyek...">
+                    </div>
+                    <ul id="history-timeline-container"></ul>
+                    <div id="empty-history-message" class="empty-history-message">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"></path></svg>
+                        <h4>Riwayat Masih Kosong</h4>
+                        <p>Selesaikan sesi pertama Anda untuk melihatnya di sini.</p>
+                    </div>
+                `;
+
+                const emptyMessage = document.getElementById('empty-history-message');
+                if (appData.history.length === 0) {
+                    emptyMessage.style.display = 'flex';
+                    emptyMessage.style.flexDirection = 'column';
+                    emptyMessage.style.alignItems = 'center';
+                    document.querySelector('.history-header').style.display = 'none';
+                    document.querySelector('.history-analysis-section').style.display = 'none';
+                    document.querySelector('.contribution-graph-container').style.display = 'none';
+                    document.querySelector('.history-controls').style.display = 'none';
+                    return;
+                }
+
+                renderHistoryAnalysis(activeHistoryPeriod, activeHistoryProject);
+                renderContributionGraph();
+                renderHistoryTimeline();
+
+                document.getElementById('history-search').addEventListener('input', renderHistoryTimeline);
+                document.querySelector('.history-filter-group').addEventListener('click', (e) => {
+                    if(e.target.matches('.history-filter-btn')) {
+                        activeHistoryFilter = e.target.dataset.filter;
+                        renderHistoryTimeline();
+                        document.querySelectorAll('.history-filter-btn').forEach(btn => btn.classList.remove('active'));
+                        e.target.classList.add('active');
+                    }
+                });
+                document.querySelector('.period-toggle-group').addEventListener('click', (e) => {
+                    if(e.target.matches('.period-toggle-btn')) {
+                        activeHistoryPeriod = e.target.dataset.period;
+                        renderHistoryAnalysis(activeHistoryPeriod, activeHistoryProject);
+                        document.querySelectorAll('.period-toggle-btn').forEach(btn => btn.classList.remove('active'));
+                        e.target.classList.add('active');
+                    }
+                });
+                document.getElementById('history-project-filter').addEventListener('change', (e) => {
+                    activeHistoryProject = e.target.value;
+                    renderHistoryAnalysis(activeHistoryPeriod, activeHistoryProject);
+                });
+                document.getElementById('export-history-btn').addEventListener('click', exportHistoryToCSV);
+            }
+
+            function renderHistoryAnalysis(period, project) {
+                const analysisGrid = document.getElementById('analysis-grid');
+                if (!analysisGrid) return;
+
+                const now = new Date();
+                let filteredHistory = appData.history
+                    .filter(item => project === 'all' || item.project === project)
+                    .filter(item => {
+                        const itemDate = new Date(item.timestamp);
+                        if (period === 'today') return itemDate.toDateString() === now.toDateString();
+                        if (period === 'week') {
+                            const weekStart = new Date(now);
+                            weekStart.setDate(now.getDate() - now.getDay());
+                            weekStart.setHours(0,0,0,0);
+                            return itemDate >= weekStart;
+                        }
+                        if (period === 'month') return itemDate.getFullYear() === now.getFullYear() && itemDate.getMonth() === now.getMonth();
+                        return false;
+                    });
+
+                const focusHistory = filteredHistory.filter(item => item.mode === 'work');
+                const totalFocusTime = focusHistory.reduce((sum, i) => sum + i.duration, 0);
+                const totalSessions = focusHistory.length;
+                const avgSessionLength = totalSessions > 0 ? (totalFocusTime / totalSessions).toFixed(1) : 0;
+
+                const focusByDay = focusHistory.reduce((acc, item) => {
+                    const day = new Date(item.timestamp).toLocaleDateString('id-ID', { weekday: 'long' });
+                    acc[day] = (acc[day] || 0) + item.duration;
+                    return acc;
+                }, {});
+                
+                let mostProductiveDay = 'N/A';
+                if (Object.keys(focusByDay).length > 0) {
+                    mostProductiveDay = Object.keys(focusByDay).reduce((a, b) => focusByDay[a] > focusByDay[b] ? a : b);
+                }
+                
+                analysisGrid.innerHTML = `
+                    <div class="analysis-card">
+                        <div class="label">Total Fokus</div>
+                        <div class="value">${totalFocusTime} <span>mnt</span></div>
+                    </div>
+                    <div class="analysis-card">
+                        <div class="label">Sesi Selesai</div>
+                        <div class="value">${totalSessions}</div>
+                    </div>
+                    <div class="analysis-card">
+                        <div class="label">Rata-rata Sesi</div>
+                        <div class="value">${avgSessionLength} <span>mnt</span></div>
+                    </div>
+                     <div class="analysis-card">
+                        <div class="label">Hari Produktif</div>
+                        <div class="value" style="font-size: 1.2rem;">${mostProductiveDay}</div>
+                    </div>
+                `;
+
+                const chartCanvas = document.getElementById('productivity-chart');
+                const chartCtx = chartCanvas.getContext('2d');
+                const daysOfWeek = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+                const chartData = daysOfWeek.map(day => focusByDay[day] || 0);
+
+                if (productivityChartInstance) {
+                    productivityChartInstance.destroy();
+                }
+
+                productivityChartInstance = new Chart(chartCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'],
+                        datasets: [{
+                            label: 'Menit Fokus',
+                            data: chartData,
+                            backgroundColor: appData.settings.accentColor,
+                            borderRadius: 4,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                             y: { display: false, beginAtZero: true },
+                             x: {
+                                grid: { display: false },
+                                ticks: { color: appData.settings.accentColor }
+                            }
+                        }
+                    }
+                });
+            }
+
+            function renderContributionGraph() {
+                const graphContainer = document.getElementById('contribution-graph');
+                if (!graphContainer) return;
+                
+                const graphData = generateContributionGraphData();
+                graphContainer.innerHTML = '';
+
+                graphData.forEach(day => {
+                    const cell = document.createElement('div');
+                    cell.className = 'graph-cell';
+                    cell.dataset.level = day.level;
+                    cell.dataset.tooltip = `${day.dateFormatted}: ${day.minutes} menit fokus`;
+                    graphContainer.appendChild(cell);
+                });
+            }
+
+            function generateContributionGraphData() {
+                const daysInYear = 365;
+                const data = [];
+                const focusByDate = appData.history.reduce((acc, item) => {
+                    if (item.mode === 'work') {
+                        const dateStr = new Date(item.timestamp).toLocaleDateString('en-CA');
+                        acc[dateStr] = (acc[dateStr] || 0) + item.duration;
+                    }
+                    return acc;
+                }, {});
+
+                const maxMinutes = Math.max(...Object.values(focusByDate), 1);
+                
+                for (let i = 0; i < daysInYear; i++) {
+                    const date = new Date();
+                    date.setDate(date.getDate() - (daysInYear - 1 - i));
+                    const dateStr = date.toLocaleDateString('en-CA');
+                    const minutes = focusByDate[dateStr] || 0;
+                    
+                    let level = 0;
+                    if (minutes > 0) level = 1;
+                    if (minutes > maxMinutes * 0.25) level = 2;
+                    if (minutes > maxMinutes * 0.5) level = 3;
+                    if (minutes > maxMinutes * 0.75) level = 4;
+                    
+                    data.push({
+                        date: dateStr,
+                        dateFormatted: date.toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' }),
+                        minutes,
+                        level,
+                    });
+                }
+                return data;
+            }
+            
+            function renderHistoryTimeline() {
+                const timelineContainer = document.getElementById('history-timeline-container');
+                const searchInput = document.getElementById('history-search');
+                if (!timelineContainer) return;
+
+                const filterText = searchInput.value.toLowerCase();
+                const filteredHistory = appData.history.filter(item => {
+                    const noteMatch = (item.note || '').toLowerCase().includes(filterText);
+                    const taskMatch = (item.task || '').toLowerCase().includes(filterText);
+                    const projectMatch = (item.project || '').toLowerCase().includes(filterText);
+                    const typeMatch = activeHistoryFilter === 'all' || 
+                                     (activeHistoryFilter === 'work' && item.mode === 'work') ||
+                                     (activeHistoryFilter === 'break' && (item.mode === 'shortBreak' || item.mode === 'longBreak'));
+                    return (noteMatch || taskMatch || projectMatch) && typeMatch;
+                }).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                
+                const grouped = filteredHistory.reduce((acc, item) => {
+                    const itemDate = new Date(item.timestamp);
+                    const dateString = itemDate.toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' });
+                    
+                    if (!acc[dateString]) acc[dateString] = [];
+                    acc[dateString].push(item);
+                    return acc;
+                }, {});
+                
+                timelineContainer.innerHTML = '';
+                if (Object.keys(grouped).length === 0) {
+                     timelineContainer.innerHTML = `<p style="text-align:center; color: var(--text-color-muted); padding: 2rem;">Tidak ada hasil yang cocok.</p>`;
+                } else {
+                    for (const date in grouped) {
+                        const groupHeader = document.createElement('li');
+                        groupHeader.className = 'timeline-date-separator';
+                        groupHeader.innerHTML = `<span>${date}</span>`;
+                        timelineContainer.appendChild(groupHeader);
+                        
+                        grouped[date].forEach(item => {
+                            const li = document.createElement('li');
+                            li.className = 'timeline-item';
+                            li.dataset.id = item.timestamp;
+                            
+                            const isWork = item.mode === 'work';
+                            const iconClass = isWork ? 'focus' : 'break';
+                            const iconSVG = isWork ? 
+                                `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm-1.992 14.707l-3.52-3.519a1.002 1.002 0 0 1 1.414-1.414l2.821 2.821 5.643-5.643a1 1 0 1 1 1.414 1.414l-6.35 6.35a1.001 1.001 0 0 1-1.422-.01z"></path></svg>` :
+                                `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 6c-3.309 0-6 2.691-6 6s2.691 6 6 6 6-2.691 6-6-2.691-6-6-6zm0 10c-2.206 0-4-1.794-4-4s1.794-4 4-4 4 1.794 4 4-1.794 4-4 4z"></path><path d="M12 4c-4.411 0-8 3.589-8 8s3.589 8 8 8 8-3.589 8-8-3.589-8-8-8zm0 14c-3.309 0-6-2.691-6-6s2.691-6 6-6 6 2.691 6 6-2.691 6-6 6z"></path></svg>`;
+
+                            const taskHTML = item.task && item.task !== 'Fokus umum' ? `<span class="timeline-task">${item.task}</span>` : '';
+                            const projectHTML = item.project ? `<span class="timeline-project">${item.project}</span>` : '';
+                            
+                            li.innerHTML = `
+                                <div class="timeline-icon ${iconClass}">${iconSVG}</div>
+                                <div class="timeline-content">
+                                    <div class="timeline-item-actions">
+                                        <button class="timeline-action-btn edit" title="Ubah Catatan">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a.9959.9959 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"></path></svg>
+                                        </button>
+                                        <button class="timeline-action-btn delete" title="Hapus Entri">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-l-1h-5l-1 1H5v2h14V4z"></path></svg>
+                                        </button>
+                                    </div>
+                                    <p>${item.note}</p>
+                                    <div class="timeline-meta">
+                                        <span>${item.duration} mnt</span>
+                                        <span>•</span>
+                                        <span>${new Date(item.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</span>
+                                        ${taskHTML}
+                                        ${projectHTML}
+                                    </div>
+                                </div>
+                            `;
+                            timelineContainer.appendChild(li);
+                        });
+                    }
+                }
+            }
+
+
+            function exportHistoryToCSV() {
+                if (appData.history.length === 0) return;
+                let csvContent = "data:text/csv;charset=utf-8,";
+                csvContent += "Timestamp,Tipe,Durasi (Menit),Catatan,Tugas Terkait,Proyek\r\n";
+                
+                appData.history.forEach(item => {
+                    const row = [
+                        `"${new Date(item.timestamp).toLocaleString('id-ID')}"`,
+                        item.mode,
+                        item.duration,
+                        `"${(item.note || '').replace(/"/g, '""')}"`,
+                        `"${item.task || ''}"`,
+                        `"${item.project || ''}"`
+                    ].join(',');
+                    csvContent += row + "\r\n";
+                });
+
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", "focusflow_history.csv");
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+
+            function handleHistoryListClick(e) {
+                const target = e.target;
+                const itemEl = target.closest('.timeline-item');
+                if (!itemEl) return;
+                const timestampId = itemEl.dataset.id;
+                const historyItemIndex = appData.history.findIndex(item => item.timestamp.toString() === timestampId);
+                if (historyItemIndex === -1) return;
+
+                if (target.closest('.timeline-action-btn.edit')) {
+                    const currentNote = appData.history[historyItemIndex].note;
+                    const newNote = prompt("Ubah catatan sesi:", currentNote);
+                    if (newNote !== null && newNote.trim() !== "") {
+                        appData.history[historyItemIndex].note = newNote.trim();
+                        saveData('history');
+                        renderHistory();
+                    }
+                } else if (target.closest('.timeline-action-btn.delete')) {
+                    if (confirm('Apakah Anda yakin ingin menghapus entri riwayat ini?')) {
+                        appData.history.splice(historyItemIndex, 1);
+                        saveData('history');
+                        renderHistory();
+                    }
+                }
+            }
+
+            function showNoteModal() {
+                showModal(DOMElements.noteModal);
+                DOMElements.noteInput.value = (focusedTaskInfo.text && focusedTaskInfo.id !== 'general') ? `Menyelesaikan: ${focusedTaskInfo.text}` : '';
+            }
+
+            function saveNote(note, isAutoSave = false) {
+                const noteText = isAutoSave ? note : DOMElements.noteInput.value.trim();
+                
+                if (noteText || lastCompletedMode === 'work') {
+                    appData.history.push({
+                        note: noteText || (lastCompletedMode === 'work' ? 'Sesi fokus' : 'Sesi istirahat'),
+                        timestamp: new Date().toISOString(),
+                        mode: lastCompletedMode,
+                        duration: appData.settings[`${lastCompletedMode}Duration`],
+                        task: lastCompletedMode === 'work' ? (focusedTaskInfo.text || null) : null,
+                        project: lastCompletedMode === 'work' ? (focusedTaskInfo.project || null) : null,
+                    });
+                    saveData('history');
+                    if (document.getElementById('history-content').classList.contains('active')) {
+                        renderHistory();
+                    }
+                }
+                
+                if (!isAutoSave) {
+                   hideModal(DOMElements.noteModal);
+                }
+                focusedTaskInfo = { id: null, text: null, project: null }; // Reset
+            }
+            
+            function showModal(modalElement) {
+                modalElement.classList.add('visible');
+            }
+
+            function hideModal(modalElement) {
+                modalElement.classList.remove('visible');
+            }
+
+            function updateClock() {
+                const now = new Date();
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                DOMElements.fullscreenClock.textContent = `${hours}:${minutes}`;
+            }
+
+            function displayRandomQuote() {
+                DOMElements.quoteDisplay.classList.remove('visible');
+                setTimeout(() => {
+                    const randomIndex = Math.floor(Math.random() * quotes.length);
+                    DOMElements.quoteDisplay.textContent = `"${quotes[randomIndex]}"`;
+                    DOMElements.quoteDisplay.classList.add('visible');
+                    setTimeout(() => {
+                        DOMElements.quoteDisplay.classList.remove('visible');
+                    }, 5000);
+                }, 500);
+            }
+
+            function updateFullscreenHint() {
+                const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+                if (DOMElements.fullscreenExitHint) {
+                    DOMElements.fullscreenExitHint.textContent = isTouchDevice 
+                        ? "Ketuk layar 2x untuk keluar" 
+                        : "Tekan 'F' untuk keluar";
+                }
+            }
+            
+            function updateTabIndicator(activeTab) {
+                if (!activeTab || !DOMElements.tabIndicator) return;
+                const indicator = DOMElements.tabIndicator;
+                
+                const left = activeTab.offsetLeft;
+                const top = activeTab.offsetTop + activeTab.offsetHeight;
+                const width = activeTab.offsetWidth;
+
+                indicator.style.width = `${width}px`;
+                indicator.style.transform = `translate(${left}px, ${top}px)`;
+            }
+            
+            function setupEventListeners() {
+                DOMElements.startPauseBtn.addEventListener('click', handleStartClick);
+                DOMElements.resetBtn.addEventListener('click', resetTimer);
+                document.querySelector('#fullscreen-main .timer-progress-wrapper').addEventListener('click', handleStartClick);
+
+                // --- [EVENT LISTENER DIPERBAIKI] ---
+                // Mengganti panggilan 'switchMode' langsung dengan logika yang benar untuk melewati sesi.
+                DOMElements.fullscreenSkipBtn.addEventListener('click', () => {
+                    pauseTimer(); // Hentikan timer yang sedang berjalan
+                    lastCompletedMode = currentMode; // Tandai mode saat ini sebagai "selesai"
+                    switchMode(true); // Panggil switchMode dengan penanda 'isSkipped' true
+                });
+
+                DOMElements.settingsBtn.addEventListener('click', () => showModal(DOMElements.settingsModal));
+                
+                DOMElements.closeModalBtns.forEach(btn => btn.addEventListener('click', () => {
+                    const modal = btn.closest('.modal');
+                    if (modal.id === 'note-modal') {
+                        const noteText = DOMElements.noteInput.value.trim() || 'Sesi fokus (tanpa catatan)';
+                        saveNote(noteText, false);
+                        handleSessionContinuation();
+                    }
+                    hideModal(modal);
+                }));
+
+                DOMElements.settingsForm.addEventListener('change', handleSettingsChange);
+                
+                ['accentColorPicker', 'timerColorPicker'].forEach(id => {
+                    DOMElements[id].addEventListener('input', handleSettingsChange);
+                });
+                
+                DOMElements.resetDataBtn.addEventListener('click', () => {
+                    if (window.confirm('Apakah Anda yakin ingin mereset semua data? Tindakan ini tidak dapat diurungkan.')) {
+                        localStorage.clear();
+                        window.location.reload();
+                    }
+                });
+
+                document.querySelectorAll('.ambient-sound-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const sound = btn.dataset.sound;
+                        appData.settings.ambientSound = sound;
+                        updateAmbientSoundUI(sound);
+                        playAmbientSound(sound);
+                        saveData('settings');
+                    });
+                });
+                
+                document.getElementById('ambient-volume-slider').addEventListener('input', (e) => {
+                    ambientGainNode.gain.value = e.target.value;
+                    appData.settings.ambientVolume = e.target.value;
+                    saveData('settings');
+                });
+
+                DOMElements.startFocusBtn.addEventListener('click', () => {
+                    const selectedValue = DOMElements.focusTaskSelect.value;
+                    if (selectedValue && selectedValue !== 'general') {
+                        const selectedTaskId = parseInt(selectedValue);
+                        const task = appData.todos.find(t => t.id === selectedTaskId);
+                        if (task) {
+                            focusedTaskInfo = { id: task.id, text: task.text, project: task.project };
+                        }
+                    } else {
+                        focusedTaskInfo = { id: 'general', text: 'Fokus umum', project: 'Umum' };
+                    }
+                    hideModal(DOMElements.focusTaskModal);
+                    startTimer();
+                });
+
+                DOMElements.fullscreenBtn.addEventListener('click', () => {
+                    document.body.classList.toggle('fullscreen-focus');
+                    updateFullscreenHint();
+                });
+
+                DOMElements.fullscreenContainer.addEventListener('touchend', (e) => {
+                    const currentTime = new Date().getTime();
+                    const tapLength = currentTime - lastTap;
+                    if (tapLength < 300 && tapLength > 0) {
+                        document.body.classList.remove('fullscreen-focus');
+                        e.preventDefault();
+                    }
+                    lastTap = currentTime;
+                });
+                
+                window.addEventListener('keydown', (e) => {
+                    if (document.querySelector('.modal.visible') || ['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return;
+                    
+                    if (e.code === 'Space') { e.preventDefault(); handleStartClick(); } 
+                    else if (e.code === 'KeyR') { e.preventDefault(); DOMElements.resetBtn.click(); } 
+                    else if (e.code === 'KeyF') { e.preventDefault(); DOMElements.fullscreenBtn.click(); }
+                    else if (e.code === 'KeyS') { e.preventDefault(); DOMElements.settingsBtn.click(); }
+                });
+
+                DOMElements.tabBtns.forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const isHistoryTab = btn.dataset.tab === 'history';
+                        DOMElements.appContainer.classList.toggle('history-view-active', isHistoryTab);
+                        DOMElements.tabBtns.forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                        DOMElements.tabContents.forEach(c => c.classList.remove('active'));
+                        const activeContent = document.getElementById(`${btn.dataset.tab}-content`);
+                        activeContent.classList.add('active');
+                        updateTabIndicator(btn);
+                        if (isHistoryTab) renderHistory();
+                    });
+                });
+
+                DOMElements.todoForm.addEventListener('submit', addTodo);
+                DOMElements.todoList.addEventListener('click', handleTodoListClick);
+                DOMElements.todoFilters.addEventListener('click', (e) => {
+                    if (e.target.matches('.filter-btn')) {
+                        activeTodoFilter = e.target.dataset.filter;
+                        document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+                        e.target.classList.add('active');
+                        renderTodos();
+                    }
+                });
+                DOMElements.manageProjectsBtn.addEventListener('click', () => showModal(DOMElements.projectModal));
+                DOMElements.projectForm.addEventListener('submit', addProject);
+                DOMElements.projectList.addEventListener('click', (e) => {
+                    if (e.target.matches('.delete-project-btn')) {
+                        deleteProject(e.target.dataset.project);
+                    }
+                });
+                DOMElements.historyContent.addEventListener('click', handleHistoryListClick);
+                
+                DOMElements.saveNoteBtn.addEventListener('click', () => {
+                    saveNote(null, false);
+                    handleSessionContinuation();
+                });
+                
+                document.addEventListener('mousemove', (e) => {
+                    if(window.matchMedia('(pointer: coarse)').matches) {
+                        DOMElements.mouseLight.style.display = 'none';
+                        return;
+                    };
+                    DOMElements.mouseLight.style.transform = `translate(${e.clientX}px, ${e.clientY}px) translate(-50%, -50%)`;
+                    
+                    if (e.target.closest('.graph-cell')) {
+                        const cell = e.target.closest('.graph-cell');
+                        document.body.dataset.tooltip = cell.dataset.tooltip;
+                        document.body.classList.add('tooltip-active');
+                        document.body.style.setProperty('--tooltip-top', (e.clientY - 30) + 'px');
+                        document.body.style.setProperty('--tooltip-left', (e.clientX) + 'px');
+                    } else {
+                        document.body.classList.remove('tooltip-active');
+                    }
+                });
+
+                window.addEventListener('resize', () => {
+                    const activeTab = document.querySelector('.tab-btn.active');
+                    if (activeTab) {
+                        updateTabIndicator(activeTab);
+                    }
+                });
+
+                window.addEventListener('load', () => {
+                    document.body.classList.add('loaded');
+                });
+            }
+
+            function init() {
+                requestNotificationPermission();
+                loadData();
+                initializeStats();
+                applySettings();
+                renderProjects();
+                renderTodos();
+                updateStatsDisplay();
+                drawStatsChart();
+                renderDailyGoal();
+                displayRandomQuote();
+                updateFullscreenDisplays();
+                updateTimerDisplay();
+                setProgress(100);
+                updateUIForTimerState();
+                updateFullscreenHint();
+                
+                updateClock();
+                clockInterval = setInterval(updateClock, 1000);
+
+                setupEventListeners();
+                
+                setTimeout(() => {
+                    const activeTabOnInit = document.querySelector('.tab-btn.active');
+                    if(activeTabOnInit) updateTabIndicator(activeTabOnInit);
+                }, 100);
+                
+                console.log("FocusFlow App Initialized with Advanced Task System!");
+            }
+
+            init();
+        });
+    </script>
+</body>
+</html>
